@@ -1,0 +1,654 @@
+📘 OpenAPI 3.0 — EL RAPIDÍN (Backend v1)
+openapi: 3.0.3
+info:
+  title: EL RAPIDÍN API
+  version: "1.0.0"
+  description: Backend v1 - Contrato oficial
+
+servers:
+  - url: https://api.elrapidin.com/v1
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Businesses
+  - name: Products
+  - name: Orders
+  - name: Delivery
+  - name: Ratings
+  - name: Admin
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        phone: { type: string }
+        email: { type: string, nullable: true }
+        role:
+          type: string
+          enum: [ADMIN, CLIENT, BUSINESS, DELIVERY]
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, SUSPENDED]
+
+    LoginRequest:
+      type: object
+      required: [phone, password]
+      properties:
+        phone: { type: string }
+        password: { type: string }
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        user: { $ref: "#/components/schemas/User" }
+
+    ProductItem:
+      type: object
+      properties:
+        productId: { type: integer }
+        quantity: { type: integer }
+
+    OrderCreateRequest:
+      type: object
+      required: [providerType, providerId, items, delivery, paymentMethod]
+      properties:
+        providerType:
+          type: string
+          enum: [BUSINESS, STORE]
+        providerId: { type: integer }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/ProductItem" }
+        delivery:
+          type: object
+          required: [address, municipality, contactName, contactPhone]
+          properties:
+            address: { type: string }
+            municipality: { type: string }
+            contactName: { type: string }
+            contactPhone: { type: string }
+        paymentMethod:
+          type: string
+          enum: [CASH, PSE]
+
+    OrderResponse:
+      type: object
+      properties:
+        orderId: { type: integer }
+        orderCode: { type: string }
+        status: { type: string }
+        estimatedPickupAt: { type: string, format: date-time }
+        estimatedDeliveryAt: { type: string, format: date-time }
+        totalPrice: { type: number }
+
+security:
+  - BearerAuth: []
+
+🔐 AUTH
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login (todos los roles)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LoginRequest" }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LoginResponse" }
+
+👤 USUARIO
+  /me:
+    get:
+      tags: [Users]
+      summary: Usuario autenticado
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+
+🏪 NEGOCIOS
+  /businesses:
+    get:
+      tags: [Businesses]
+      summary: Listado público de negocios
+      parameters:
+        - name: zoneId
+          in: query
+          schema: { type: integer }
+        - name: openNow
+          in: query
+          schema: { type: boolean }
+      responses:
+        "200":
+          description: OK
+
+  /businesses/{id}:
+    get:
+      tags: [Businesses]
+      summary: Detalle de negocio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+📦 PRODUCTOS
+  /businesses/{id}/products:
+    get:
+      tags: [Products]
+      summary: Productos de negocio
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+🛒 ÓRDENES (CORE)
+  /orders:
+    post:
+      tags: [Orders]
+      summary: Crear orden
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OrderCreateRequest" }
+      responses:
+        "201":
+          description: Orden creada
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OrderResponse" }
+
+  /orders/{id}:
+    get:
+      tags: [Orders]
+      summary: Detalle de orden
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: OK
+
+🚚 DOMICILIARIOS
+  /delivery/orders/available:
+    get:
+      tags: [Delivery]
+      summary: Pedidos disponibles
+      responses:
+        "200":
+          description: OK
+
+  /delivery/orders/{id}/accept:
+    post:
+      tags: [Delivery]
+      summary: Aceptar pedido
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Pedido asignado
+
+  /delivery/orders/{id}/deliver:
+    post:
+      tags: [Delivery]
+      summary: Confirmar entrega
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Pedido entregado
+
+⭐ CALIFICACIONES
+  /ratings:
+    post:
+      tags: [Ratings]
+      summary: Crear calificación
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, targetType, rating]
+              properties:
+                orderId: { type: integer }
+                targetType:
+                  type: string
+                  enum: [BUSINESS, DELIVERY]
+                rating:
+                  type: integer
+                  minimum: 1
+                  maximum: 5
+                comment:
+                  type: string
+      responses:
+        "201":
+          description: Calificación creada
+
+👑 ADMIN (ESENCIAL MVP)
+  /admin/users:
+    post:
+      tags: [Admin]
+      summary: Crear negocio o domiciliario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [role, name, phone, password]
+              properties:
+                role:
+                  type: string
+                  enum: [BUSINESS, DELIVERY]
+                name: { type: string }
+                phone: { type: string }
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "201":
+          description: Usuario creado 
+
+
+
+
+-----------------------------------------------------------
+-----------------------------------------------------------
+
+🔐 Autenticación
+
+POST /auth/login
+
+POST /auth/register (solo CLIENT)
+
+👤 Usuario base
+
+GET /me
+
+🏪 Negocios visibles
+
+GET /businesses
+
+GET /businesses/:id
+
+GET /businesses/:id/products
+
+GET /businesses/:id/hours
+
+🛒 ÓRDENES (CORE DEL CORE)
+
+POST /orders
+
+GET /orders/:id
+
+🚚 Domiciliarios (flujo mínimo)
+
+GET /delivery/orders/available
+
+POST /delivery/orders/:id/accept
+
+POST /delivery/orders/:id/deliver
+
+⭐ Calificaciones
+
+POST /ratings
+
+📌 Con estos 13 endpoints puedes operar EL RAPIDÍN en la vida real.
+
+⚠️ NIVEL 1 — NECESARIOS PARA OPERAR BIEN (PERO PUEDEN ESPERAR)
+
+Se implementan después de que el flujo principal funcione.
+
+👑 Admin
+
+POST /admin/users
+
+POST /admin/businesses
+
+PUT /admin/businesses/:id
+
+POST /admin/products
+
+GET /admin/zones
+
+📦 Órdenes (mejor UX)
+
+GET /orders?mine=true
+
+POST /orders/:id/pay (mock)
+
+🧊 NIVEL 2 — NO MVP (NO IMPLEMENTAR AHORA)
+
+Estos NO van en v1, aunque estén diseñados.
+
+/admin/configuracion
+
+/admin/servicios
+
+/negocio/historial/exportar
+
+preferencias
+
+notificaciones
+
+seguridad avanzada
+
+2FA
+
+métricas complejas
+
+📌 Diseñados ≠ implementados.
+
+🧠 2️⃣ RESUMEN EJECUTIVO (para que no te pierdas)
+El MVP permite:
+
+cliente se registra
+
+cliente ve negocios
+
+cliente crea pedido
+
+sistema calcula tiempos
+
+domiciliario acepta
+
+domiciliario entrega
+
+cliente califica
+
+👉 Eso es un negocio funcionando.
+
+🧱 3️⃣ ORDEN CORRECTO DE IMPLEMENTACIÓN BACKEND
+
+Este orden NO se cambia si quieres evitar refactors.
+
+🥇 FASE 1 — FUNDACIÓN
+
+Base de datos
+
+Migraciones
+
+Tabla users
+
+Tabla event_log
+
+Hash de contraseñas
+
+JWT
+
+👉 Nada de órdenes todavía.
+
+🥈 FASE 2 — CATÁLOGO
+
+businesses
+
+business_hours
+
+products
+
+zones
+
+👉 Aquí ya puedes ver negocios y productos.
+
+🥉 FASE 3 — TRANSACCIONES
+
+orders
+
+order_items
+
+cálculos financieros
+
+tiempos estimados
+
+👉 Aquí el sistema empieza a mover dinero (lógico).
+
+🏁 FASE 4 — OPERACIÓN
+
+delivery_profiles
+
+delivery_zones
+
+order_assignments
+
+👉 Aquí entra el domiciliario.
+
+⭐ FASE 5 — REPUTACIÓN
+
+ratings
+
+Primer commit backend debería tener:
+
+estructura de proyecto
+
+conexión DB
+
+migraciones base
+
+/health
+
+/auth/login
+
+/auth/register
+
+Nada más.
+
+🚦 5️⃣ CHECKLIST DE “VAMOS BIEN”
+
+Cuando:
+
+/auth/login funciona
+
+/businesses devuelve data
+
+/orders crea órdenes
+
+/delivery/orders/available lista pedidos 
+
+
+🔐 AUTH
+/login
+POST /auth/login
+
+/register (solo cliente)
+POST /auth/register
+
+/forgot-password
+POST /auth/forgot-password
+
+👤 /dashboard (CLIENTE)
+Navbar + sesión
+GET /me
+
+🏪 /negocios
+GET /businesses?zoneId=&search=&openNow=true
+
+🏪 /negocios/:id
+GET /businesses/:id
+GET /businesses/:id/products
+GET /businesses/:id/hours
+
+🏬 /tiendas/:id
+GET /stores/:id
+GET /stores/:id/products
+
+🚚 /servicios
+GET /services
+
+📦 /servicios/paqueteria
+POST /orders/quote
+
+
+Request:
+
+{
+  "serviceType": "PAQUETERIA",
+  "pickup": {...},
+  "delivery": {...}
+}
+
+🏗️ /servicios/motocarguero
+POST /orders/quote
+
+
+(serviceType = MOTOCARGUERO)
+
+🛒 /carrito
+POST /cart/add
+POST /cart/remove
+GET  /cart
+DELETE /cart/clear
+
+
+Nota PO
+En MVP el carrito puede ser frontend-only.
+Backend solo valida al crear orden.
+
+📝 /orden/crear
+POST /orders
+
+
+Request:
+
+{
+  "providerType": "BUSINESS",
+  "providerId": 12,
+  "items": [...],
+  "delivery": {...}
+}
+
+
+📌 Dispara: order.created
+
+🔍 /orden/confirmar
+GET /orders/:id
+
+💳 /orden/pago
+POST /orders/:id/pay
+
+
+(payment mock en MVP)
+
+⭐ /orden/calificar/:orderId
+POST /ratings
+
+📦 /pedidos
+GET /orders?mine=true&status=ACTIVE
+GET /orders?mine=true&status=HISTORY
+
+👤 /perfil
+GET /me
+PUT /me
+
+📍 /perfil/direcciones
+GET /addresses
+POST /addresses
+PUT /addresses/:id
+DELETE /addresses/:id
+
+🚴 DOMICILIARIO
+/domiciliario/login
+POST /auth/login
+
+/domiciliario/dashboard
+GET /delivery/me
+
+/domiciliario/pedidos
+GET /delivery/orders/available
+GET /delivery/orders/assigned
+
+Acciones domiciliario
+POST /delivery/orders/:id/accept
+POST /delivery/orders/:id/pickup
+POST /delivery/orders/:id/deliver
+
+/domiciliario/perfil
+GET /delivery/profile
+PUT /delivery/profile
+
+🏪 NEGOCIO
+/negocio/login
+POST /auth/login
+
+/negocio/dashboard
+GET /business/me
+GET /business/orders/summary
+
+/negocio/pedidos
+GET /business/orders?status=PENDING
+
+/negocio/historial
+GET /business/orders?status=DELIVERED
+
+/negocio/perfil
+GET /business/me
+PUT /business/me   (requiere aprobación admin)
+
+👑 ADMIN
+/admin/dashboard
+GET /admin/metrics
+
+/admin/negocios
+GET /admin/businesses
+POST /admin/businesses
+PUT /admin/businesses/:id
+DELETE /admin/businesses/:id
+
+/admin/tiendas
+GET /admin/stores
+POST /admin/stores
+PUT /admin/stores/:id
+DELETE /admin/stores/:id
+
+/admin/productos
+POST /admin/products
+PUT /admin/products/:id
+DELETE /admin/products/:id
+
+/admin/domiciliarios
+GET /admin/delivery
+POST /admin/delivery
+PUT /admin/delivery/:id
+
+/admin/servicios
+GET /admin/services
+PUT /admin/services/:id
+
+/admin/configuracion
+GET /admin/config
+PUT /admin/config
+

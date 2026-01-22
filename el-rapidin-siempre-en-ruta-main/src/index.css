@@ -1,0 +1,226 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* EL RAPIDÍN Design System - SIEMPRE EN RUTA */
+/* Futuristic, Premium, Paisa Montañero Identity */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  :root {
+    /* Core Brand Colors - Dark Theme Primary */
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 7%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 98%;
+
+    /* Primary - Deep Black with slight warmth */
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 4%;
+
+    /* Secondary - Pure White elements */
+    --secondary: 0 0% 14%;
+    --secondary-foreground: 0 0% 98%;
+
+    /* Muted - Subtle grays */
+    --muted: 0 0% 12%;
+    --muted-foreground: 0 0% 60%;
+
+    /* Accent - Vibrant Red (Energía, Velocidad) */
+    --accent: 0 85% 55%;
+    --accent-foreground: 0 0% 98%;
+
+    /* Emphasis - Bold Yellow (CTAs, Alertas) */
+    --emphasis: 45 100% 50%;
+    --emphasis-foreground: 0 0% 4%;
+
+    /* Destructive */
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* Success - Route completed */
+    --success: 142 76% 45%;
+    --success-foreground: 0 0% 98%;
+
+    /* Warning - In transit */
+    --warning: 45 100% 50%;
+    --warning-foreground: 0 0% 4%;
+
+    /* UI Elements */
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 0 85% 55%;
+
+    --radius: 0.75rem;
+
+    /* Gradients */
+    --gradient-brand: linear-gradient(135deg, hsl(0 85% 55%) 0%, hsl(45 100% 50%) 100%);
+    --gradient-dark: linear-gradient(180deg, hsl(0 0% 7%) 0%, hsl(0 0% 4%) 100%);
+    --gradient-glow: radial-gradient(ellipse at center, hsl(0 85% 55% / 0.15) 0%, transparent 70%);
+    --gradient-route: linear-gradient(90deg, hsl(0 85% 55%) 0%, hsl(45 100% 50%) 50%, hsl(0 85% 55%) 100%);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 16px hsl(0 0% 0% / 0.4);
+    --shadow-lg: 0 8px 32px hsl(0 0% 0% / 0.5);
+    --shadow-glow: 0 0 40px hsl(0 85% 55% / 0.3);
+    --shadow-glow-yellow: 0 0 40px hsl(45 100% 50% / 0.3);
+
+    /* Sidebar */
+    --sidebar-background: 0 0% 6%;
+    --sidebar-foreground: 0 0% 90%;
+    --sidebar-primary: 0 85% 55%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 0 0% 12%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-ring: 0 85% 55%;
+  }
+
+  .dark {
+    /* Already dark by default */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    @apply font-bold tracking-tight;
+  }
+}
+
+@layer components {
+  /* Brand Text Gradient */
+  .text-gradient-brand {
+    background: var(--gradient-brand);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Animated Route Line */
+  .route-line {
+    background: var(--gradient-route);
+    background-size: 200% 100%;
+    animation: route-flow 3s linear infinite;
+  }
+
+  /* Glow Effects */
+  .glow-red {
+    box-shadow: var(--shadow-glow);
+  }
+
+  .glow-yellow {
+    box-shadow: var(--shadow-glow-yellow);
+  }
+
+  /* Card Hover Effect */
+  .card-hover {
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .card-hover:hover {
+    @apply -translate-y-1;
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+  }
+
+  /* Glass Effect */
+  .glass {
+    @apply backdrop-blur-xl bg-card/80 border border-border/50;
+  }
+
+  /* Pulse Animation for Live Status */
+  .pulse-live {
+    @apply relative;
+  }
+
+  .pulse-live::before {
+    content: '';
+    @apply absolute w-2 h-2 rounded-full bg-success;
+    animation: pulse-ring 1.5s ease-out infinite;
+  }
+
+  /* Number Display (Financial) */
+  .number-display {
+    font-family: 'Space Grotesk', monospace;
+    font-variant-numeric: tabular-nums;
+    @apply tracking-tight font-semibold;
+  }
+}
+
+@layer utilities {
+  /* Animations */
+  @keyframes route-flow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .animate-float {
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out forwards;
+  }
+
+  /* Stagger delays */
+  .delay-100 { animation-delay: 100ms; }
+  .delay-200 { animation-delay: 200ms; }
+  .delay-300 { animation-delay: 300ms; }
+  .delay-400 { animation-delay: 400ms; }
+  .delay-500 { animation-delay: 500ms; }
+}
