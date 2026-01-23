@@ -51,6 +51,8 @@ type TipoNegocio =
   | "MEDICAMENT_STORE"
   | "OTHER";
 
+type UIStatus = "active" | "inactive" | "pending" | "error";
+
 interface Negocio {
   id: string;
   nombre: string;
@@ -61,7 +63,7 @@ interface Negocio {
   telefono: string;
   email?: string;
   password?: string;
-  estado: "active" | "inactive";
+  estado: UIStatus;
   logo?: string;
   imagenFondo?: string;
   descripcion?: string;
@@ -168,7 +170,7 @@ const NegociosPage = () => {
 
   const [formData, setFormData] = useState({
     nombre: "",
-    tipo: "restaurante" as TipoNegocio,
+    tipo: "RESTAURANT" as TipoNegocio,
     direccion: "",
     municipio: "",
     departamento: "",
@@ -301,9 +303,12 @@ const NegociosPage = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="restaurante">Restaurantes</SelectItem>
-            <SelectItem value="mensajeria">Mensajería</SelectItem>
-            <SelectItem value="motocarguero">Motocarguero</SelectItem>
+            <SelectItem value="RESTAURANT">Restaurantes</SelectItem>
+            <SelectItem value="STORE">Tiendas</SelectItem>
+            <SelectItem value="LICORERA">Licoreras</SelectItem>
+            <SelectItem value="MEDICAMENT_STORE">Droguerías</SelectItem>
+            <SelectItem value="BUSINESS">Negocios</SelectItem>
+            <SelectItem value="OTHER">Otros</SelectItem>
           </SelectContent>
         </Select>
       </div>

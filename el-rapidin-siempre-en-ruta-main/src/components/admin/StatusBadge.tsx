@@ -1,13 +1,33 @@
 import { cn } from "@/lib/utils";
 
-type StatusType = "active" | "inactive" | "pending" | "success" | "warning" | "error";
+/* ===================== DOMAIN STATUS ===================== */
+type BusinessStatus =
+  | "ACTIVE"
+  | "INACTIVE"
+  | "PENDING"
+  | "SUSPENDED"
+  | "DELETED";
 
+/* ===================== UI STATUS ===================== */
+type StatusType =
+  | "active"
+  | "inactive"
+  | "pending"
+  | "success"
+  | "warning"
+  | "error";
+
+/* ===================== PROPS ===================== */
 interface StatusBadgeProps {
-  status: StatusType;
+  status: StatusType | BusinessStatus;
   label?: string;
 }
 
-const statusConfig: Record<StatusType, { bg: string; text: string; dot: string; label: string }> = {
+/* ===================== CONFIG ===================== */
+const statusConfig: Record<
+  StatusType,
+  { bg: string; text: string; dot: string; label: string }
+> = {
   active: {
     bg: "bg-success/10",
     text: "text-success",
@@ -46,15 +66,43 @@ const statusConfig: Record<StatusType, { bg: string; text: string; dot: string; 
   },
 };
 
+/* ===================== ADAPTER ===================== */
+const mapBusinessStatusToUI = (status: BusinessStatus): StatusType => {
+  switch (status) {
+    case "ACTIVE":
+      return "active";
+    case "INACTIVE":
+      return "inactive";
+    case "PENDING":
+      return "pending";
+    case "SUSPENDED":
+      return "error";
+    case "DELETED":
+      return "error";
+    default:
+      return "inactive";
+  }
+};
+
+/* ===================== COMPONENT ===================== */
 const StatusBadge = ({ status, label }: StatusBadgeProps) => {
-  const config = statusConfig[status];
+  const uiStatus: StatusType =
+    status === "ACTIVE" ||
+    status === "INACTIVE" ||
+    status === "PENDING" ||
+    status === "DELETED" ||
+    status === "SUSPENDED"
+      ? mapBusinessStatusToUI(status)
+      : status;
+
+  const config = statusConfig[uiStatus];
 
   return (
     <span
       className={cn(
         "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
         config.bg,
-        config.text
+        config.text,
       )}
     >
       <span className={cn("w-1.5 h-1.5 rounded-full", config.dot)} />
