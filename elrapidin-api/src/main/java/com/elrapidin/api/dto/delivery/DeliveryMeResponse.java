@@ -15,7 +15,7 @@ public class DeliveryMeResponse {
     private String vehiclePlate;
     private ServiceType serviceType;
     private DeliveryStatus status;
-    private Long currentZoneId;
+    private String zone;
 
     // ===== GETTERS & SETTERS =====
 
@@ -83,11 +83,11 @@ public class DeliveryMeResponse {
         this.status = status;
     }
 
-    public Long getCurrentZoneId() {
-        return currentZoneId;
+    public String getZone() {
+        return zone;
     }
 
-    public void setCurrentZoneId(Long currentZoneId) {
-        this.currentZoneId = currentZoneId;
+    public void setZone(String zone) {
+        this.zone = zone;
     }
 }

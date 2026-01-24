@@ -22,15 +22,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(JwtService jwtService) {
         this.jwtService = jwtService;
     }
-    
 
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
             HttpServletResponse response,
             FilterChain filterChain) throws ServletException, IOException {
-
-        System.out.println(">>> JWT FILTER EJECUTADO <<<");
 
         String authHeader = request.getHeader("Authorization");
 
@@ -45,14 +42,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             Long userId = jwtService.extractUserId(token);
             String role = jwtService.extractRole(token);
 
+            AuthenticatedUser principal = new AuthenticatedUser(userId, role);
+
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    userId,
+                    principal,
                     null,
                     List.of(new SimpleGrantedAuthority("ROLE_" + role)));
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-        } catch (Exception e) {
+        } catch (Exception ex) {
             SecurityContextHolder.clearContext();
         }
 

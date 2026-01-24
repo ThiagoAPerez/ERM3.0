@@ -2,8 +2,6 @@ package com.elrapidin.api.domain.entity.order;
 
 import jakarta.persistence.*;
 
-import java.math.BigDecimal;
-
 @Entity
 @Table(name = "order_items")
 public class OrderItemEntity {
@@ -12,64 +10,36 @@ public class OrderItemEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_id", nullable = false)
-    private Long orderId;
-
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
+    @ManyToOne(optional = false)
+    private OrderEntity order;
 
     @Column(nullable = false)
-    private Integer quantity;
+    private String productName;
 
-    @Column(name = "cost_price", nullable = false)
-    private BigDecimal costPrice;
+    @Column(nullable = false)
+    private int quantity;
 
     @Column(name = "sale_price", nullable = false)
-    private BigDecimal salePrice;
+    private long salePrice;
 
-    // ===== GETTERS & SETTERS =====
+    @Column(name = "cost_price", nullable = false)
+    private long costPrice;
 
-    public Long getId() {
-        return id;
+    protected OrderItemEntity() {
     }
 
-    public Long getOrderId() {
-        return orderId;
-    }
-
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
-    }
-
-    public Long getProductId() {
-        return productId;
-    }
-
-    public void setProductId(Long productId) {
-        this.productId = productId;
-    }
-
-    public Integer getQuantity() {
-        return quantity;
-    }
-
-    public void setQuantity(Integer quantity) {
+    public OrderItemEntity(
+            String productName,
+            int quantity,
+            long salePrice,
+            long costPrice) {
+        this.productName = productName;
         this.quantity = quantity;
-    }
-
-    public BigDecimal getCostPrice() {
-        return costPrice;
-    }
-
-    public void setCostPrice(BigDecimal costPrice) {
+        this.salePrice = salePrice;
         this.costPrice = costPrice;
     }
 
-    public BigDecimal getSalePrice() {
-        return salePrice;
-    }
-
-    public void setSalePrice(BigDecimal salePrice) {
-        this.salePrice = salePrice;
+    void attachTo(OrderEntity order) {
+        this.order = order;
     }
 }

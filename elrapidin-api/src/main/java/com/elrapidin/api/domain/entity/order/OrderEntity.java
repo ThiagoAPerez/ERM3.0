@@ -1,16 +1,15 @@
 package com.elrapidin.api.domain.entity.order;
 
-import com.elrapidin.api.domain.enums.delivery.ServiceType;
-import com.elrapidin.api.domain.enums.order.OrderStatus;
-import com.elrapidin.api.domain.enums.order.OrderType;
-import com.elrapidin.api.domain.enums.payments.PaymentMethod;
-import com.elrapidin.api.domain.enums.payments.PaymentStatus;
-
 import jakarta.persistence.*;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.UUID;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.elrapidin.api.domain.entity.UserEntity;
+import com.elrapidin.api.domain.entity.businesses.BusinessEntity;
+import com.elrapidin.api.domain.entity.delivery.DeliveryProfileEntity;
+import com.elrapidin.api.domain.enums.order.OrderStatus;
 
 @Entity
 @Table(name = "orders")
@@ -20,244 +19,175 @@ public class OrderEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "order_code", nullable = false, unique = true)
-    private String orderCode;
+    @ManyToOne(optional = false)
+    private UserEntity customer;
 
-    @Column(name = "client_user_id", nullable = false)
-    private Long clientUserId;
+    @ManyToOne(optional = false)
+    private BusinessEntity business;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "order_type", nullable = false)
-    private OrderType orderType;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "service_type")
-    private ServiceType serviceType;
-
-    @Column(name = "provider_id")
-    private Long providerId;
-
-    @Column(name = "delivery_user_id")
-    private Long deliveryUserId;
+    @ManyToOne
+    private DeliveryProfileEntity delivery;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private OrderStatus status = OrderStatus.CREATED;
+    @Column(nullable = false, length = 50)
+    private OrderStatus status;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_method", nullable = false)
-    private PaymentMethod paymentMethod = PaymentMethod.CASH;
+    @Column(name = "client_address_id", nullable = false)
+    private Long clientAddressId;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "payment_status", nullable = false)
-    private PaymentStatus paymentStatus = PaymentStatus.PENDING;
+    @Column(name = "address_snapshot", nullable = false, columnDefinition = "TEXT")
+    private String addressSnapshot;
 
-    // ===== FINANZAS =====
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
 
-    @Column(name = "subtotal_sale", nullable = false)
-    private BigDecimal subtotalSale;
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderItemEntity> items = new ArrayList<>();
 
-    @Column(name = "subtotal_cost", nullable = false)
-    private BigDecimal subtotalCost;
+    @Column(name = "delivery_confirmation_code", length = 6)
+    private String deliveryConfirmationCode;
 
-    @Column(name = "platform_margin", nullable = false)
-    private BigDecimal platformMargin;
+    @Column(name = "delivery_code_generated_at")
+    private Instant deliveryCodeGeneratedAt;
 
-    @Column(name = "delivery_fee", nullable = false)
-    private BigDecimal deliveryFee;
-
-    @Column(name = "delivery_commission", nullable = false)
-    private BigDecimal deliveryCommission;
-
-    @Column(name = "delivery_earning", nullable = false)
-    private BigDecimal deliveryEarning;
-
-    @Column(name = "total_price", nullable = false)
-    private BigDecimal totalPrice;
-
-    // ===== ENTREGA =====
-
-    @Column(name = "delivery_address", nullable = false)
-    private String deliveryAddress;
-
-    @Column(name = "delivery_municipality", nullable = false)
-    private String deliveryMunicipality;
-
-    @Column(name = "delivery_contact_name", nullable = false)
-    private String deliveryContactName;
-
-    @Column(name = "delivery_contact_phone", nullable = false)
-    private String deliveryContactPhone;
-
-    @Column(name = "delivery_code_hash", nullable = false)
-    private String deliveryCodeHash;
-
-    private LocalDateTime estimatedPickupAt;
-    private LocalDateTime estimatedDeliveryAt;
-
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void prePersist() {
-        if (this.orderCode == null) {
-            this.orderCode = "RPD-" + UUID.randomUUID()
-                    .toString()
-                    .substring(0, 8)
-                    .toUpperCase();
-        }
+    protected OrderEntity() {
     }
 
-    // ===== GETTERS & SETTERS =====
+    public OrderEntity(
+            UserEntity customer,
+            BusinessEntity business,
+            Long clientAddressId,
+            String addressSnapshot) {
+        this.customer = customer;
+        this.business = business;
+        this.clientAddressId = clientAddressId;
+        this.addressSnapshot = addressSnapshot;
+        this.status = OrderStatus.CREATED;
+    }
+
+    public void addItem(OrderItemEntity item) {
+        item.attachTo(this);
+        this.items.add(item);
+    }
+
+    public void changeStatus(OrderStatus newStatus) {
+        if (this.status.isTerminal()) {
+            throw new IllegalStateException("Order is already in terminal state");
+        }
+        this.status = newStatus;
+    }
+
+    public void assignDelivery(DeliveryProfileEntity delivery) {
+        if (this.delivery != null) {
+            throw new IllegalStateException("Delivery already assigned");
+        }
+        this.delivery = delivery;
+    }
+
+    public void generateDeliveryCode(String code) {
+        if (this.deliveryConfirmationCode != null) {
+            throw new IllegalStateException("Delivery code already generated");
+        }
+        this.deliveryConfirmationCode = code;
+        this.deliveryCodeGeneratedAt = Instant.now();
+    }
+
+    public boolean matchesDeliveryCode(String code) {
+        return this.deliveryConfirmationCode != null &&
+                this.deliveryConfirmationCode.equals(code);
+    }
+
+    public void clearDeliveryCode() {
+        this.deliveryConfirmationCode = null;
+        this.deliveryCodeGeneratedAt = null;
+    }
 
     public Long getId() {
         return id;
-    }
-
-    public Long getClientUserId() {
-        return clientUserId;
-    }
-
-    public void setClientUserId(Long clientUserId) {
-        this.clientUserId = clientUserId;
-    }
-
-    public OrderType getOrderType() {
-        return orderType;
-    }
-
-    public void setOrderType(OrderType orderType) {
-        this.orderType = orderType;
-    }
-
-    public ServiceType getServiceType() {
-        return serviceType;
-    }
-
-    public void setServiceType(ServiceType serviceType) {
-        this.serviceType = serviceType;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public Long getProviderId() {
-        return providerId;
-    }
-
-    public String getOrderCode() {
-        return orderCode;
-    }
-
-    public void setProviderId(Long providerId) {
-        this.providerId = providerId;
-    }
-
-    public Long getDeliveryUserId() {
-        return deliveryUserId;
-    }
-
-    public void setDeliveryUserId(Long deliveryUserId) {
-        this.deliveryUserId = deliveryUserId;
     }
 
     public OrderStatus getStatus() {
         return status;
     }
 
+    public String getDeliveryConfirmationCode() {
+        return deliveryConfirmationCode;
+    }
+
+    public void setDeliveryConfirmationCode(String deliveryConfirmationCode) {
+        this.deliveryConfirmationCode = deliveryConfirmationCode;
+    }
+
+    public Instant getDeliveryCodeGeneratedAt() {
+        return deliveryCodeGeneratedAt;
+    }
+
+    public void setDeliveryCodeGeneratedAt(Instant deliveryCodeGeneratedAt) {
+        this.deliveryCodeGeneratedAt = deliveryCodeGeneratedAt;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public UserEntity getCustomer() {
+        return customer;
+    }
+
+    public void setCustomer(UserEntity customer) {
+        this.customer = customer;
+    }
+
+    public BusinessEntity getBusiness() {
+        return business;
+    }
+
+    public void setBusiness(BusinessEntity business) {
+        this.business = business;
+    }
+
+    public DeliveryProfileEntity getDelivery() {
+        return delivery;
+    }
+
+    public void setDelivery(DeliveryProfileEntity delivery) {
+        this.delivery = delivery;
+    }
+
     public void setStatus(OrderStatus status) {
         this.status = status;
     }
 
-    public BigDecimal getSubtotalSale() {
-        return subtotalSale;
+    public Long getClientAddressId() {
+        return clientAddressId;
     }
 
-    public BigDecimal getSubtotalCost() {
-        return subtotalCost;
+    public void setClientAddressId(Long clientAddressId) {
+        this.clientAddressId = clientAddressId;
     }
 
-    public BigDecimal getPlatformMargin() {
-        return platformMargin;
+    public String getAddressSnapshot() {
+        return addressSnapshot;
     }
 
-    public BigDecimal getDeliveryFee() {
-        return deliveryFee;
+    public void setAddressSnapshot(String addressSnapshot) {
+        this.addressSnapshot = addressSnapshot;
     }
 
-    public BigDecimal getDeliveryCommission() {
-        return deliveryCommission;
+    public Instant getCreatedAt() {
+        return createdAt;
     }
 
-    public BigDecimal getDeliveryEarning() {
-        return deliveryEarning;
-    }
-
-    public void setOrderCode(String orderCode) {
-        this.orderCode = orderCode;
-    }
-
-    public void setCreatedAt(LocalDateTime createdAt) {
+    public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
     }
 
-    public String getDeliveryCodeHash() {
-        return deliveryCodeHash;
+    public List<OrderItemEntity> getItems() {
+        return items;
     }
 
-    public BigDecimal getTotalPrice() {
-        return totalPrice;
+    public void setItems(List<OrderItemEntity> items) {
+        this.items = items;
     }
 
-    public void setSubtotalSale(BigDecimal subtotalSale) {
-        this.subtotalSale = subtotalSale;
-    }
-
-    public void setSubtotalCost(BigDecimal subtotalCost) {
-        this.subtotalCost = subtotalCost;
-    }
-
-    public void setPlatformMargin(BigDecimal platformMargin) {
-        this.platformMargin = platformMargin;
-    }
-
-    public void setDeliveryFee(BigDecimal deliveryFee) {
-        this.deliveryFee = deliveryFee;
-    }
-
-    public void setDeliveryCommission(BigDecimal deliveryCommission) {
-        this.deliveryCommission = deliveryCommission;
-    }
-
-    public void setDeliveryEarning(BigDecimal deliveryEarning) {
-        this.deliveryEarning = deliveryEarning;
-    }
-
-    public void setTotalPrice(BigDecimal totalPrice) {
-        this.totalPrice = totalPrice;
-    }
-
-    public void setDeliveryAddress(String deliveryAddress) {
-        this.deliveryAddress = deliveryAddress;
-    }
-
-    public void setDeliveryMunicipality(String deliveryMunicipality) {
-        this.deliveryMunicipality = deliveryMunicipality;
-    }
-
-    public void setDeliveryContactName(String deliveryContactName) {
-        this.deliveryContactName = deliveryContactName;
-    }
-
-    public void setDeliveryContactPhone(String deliveryContactPhone) {
-        this.deliveryContactPhone = deliveryContactPhone;
-    }
-
-    public void setDeliveryCodeHash(String deliveryCodeHash) {
-        this.deliveryCodeHash = deliveryCodeHash;
-    }
 }

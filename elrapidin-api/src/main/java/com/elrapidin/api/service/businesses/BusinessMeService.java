@@ -1,12 +1,15 @@
 package com.elrapidin.api.service.businesses;
 
+import com.elrapidin.api.dto.business.BusinessDashboardSummary;
+
 import com.elrapidin.api.domain.entity.businesses.BusinessEntity;
 import com.elrapidin.api.domain.repository.BusinessRepository;
 import com.elrapidin.api.dto.business.BusinessMeResponse;
+import com.elrapidin.api.exception.ApiException;
 import org.springframework.stereotype.Service;
 
 @Service
-public class BusinessMeService {
+public class BusinessMeService implements BusinessQueries {
 
     private final BusinessRepository businessRepository;
 
@@ -14,11 +17,12 @@ public class BusinessMeService {
         this.businessRepository = businessRepository;
     }
 
-    public BusinessMeResponse getMyBusiness(Long userId) {
+    @Override
+    public BusinessMeResponse getMyBusinessProfile(Long ownerUserId) {
 
         BusinessEntity business = businessRepository
-                .findByOwnerUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Business not found for user"));
+                .findByOwnerUserId(ownerUserId)
+                .orElseThrow(() -> new ApiException("Business not found for user", 404));
 
         BusinessMeResponse response = new BusinessMeResponse();
         response.setId(business.getId());
@@ -34,5 +38,38 @@ public class BusinessMeService {
                 business.getPreparationTimeMinutes());
 
         return response;
+    }
+
+    // ===============================
+    // MÉTODOS NO IMPLEMENTADOS AÚN
+    // ===============================
+
+    @Override
+    public BusinessDashboardSummary getDashboardSummary(
+            Long businessId,
+            com.elrapidin.api.dto.common.DateRange range) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public java.util.List<com.elrapidin.api.dto.business.BusinessOrderListItem> getOrders(
+            Long businessId,
+            com.elrapidin.api.dto.business.BusinessOrderFilter filter,
+            com.elrapidin.api.dto.common.DateRange range) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public com.elrapidin.api.dto.business.BusinessOrderDetail getOrderDetail(
+            Long businessId,
+            Long orderId) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    @Override
+    public java.util.List<com.elrapidin.api.dto.business.BusinessOrderListItem> getOrderHistory(
+            Long businessId,
+            com.elrapidin.api.dto.common.DateRange range) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 }

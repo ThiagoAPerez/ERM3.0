@@ -12,8 +12,8 @@ import com.elrapidin.api.dto.admin.AdminDeliveryListResponse;
 import com.elrapidin.api.dto.admin.AdminDeliveryResponse;
 import com.elrapidin.api.dto.admin.CreateDeliveryRequest;
 import com.elrapidin.api.dto.admin.UpdateDeliveryRequest;
-import com.elrapidin.api.security.PasswordEncoderService;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,12 +27,12 @@ public class AdminDeliveryService {
 
     private final UserRepository userRepository;
     private final DeliveryProfileRepository deliveryProfileRepository;
-    private final PasswordEncoderService passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     public AdminDeliveryService(
             UserRepository userRepository,
             DeliveryProfileRepository deliveryProfileRepository,
-            PasswordEncoderService passwordEncoder) {
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.deliveryProfileRepository = deliveryProfileRepository;
         this.passwordEncoder = passwordEncoder;
@@ -85,6 +85,7 @@ public class AdminDeliveryService {
 
     // ===========================================
     // ============ Admin Delivery Query Methods ============
+    // ===========================================
 
     @Transactional
     public void updateDeliveryStatus(Long userId, DeliveryStatus status) {
@@ -99,6 +100,7 @@ public class AdminDeliveryService {
 
     // ===========================================
     // ============ Admin Delivery Update Methods ============
+    // ===========================================
 
     @Transactional
     public void updateDelivery(Long userId, UpdateDeliveryRequest request) {
@@ -120,6 +122,7 @@ public class AdminDeliveryService {
 
     // ===========================================
     // ============ Admin Delivery List Methods ============
+    // ===========================================
 
     public AdminDeliveryListResponse getDeliveries(
             String search,
@@ -160,7 +163,8 @@ public class AdminDeliveryService {
     }
 
     // ===========================================
-    // ============ Admin Delivery Suspend Methods ============
+    // ============ Admin Delivery Suspend ============
+    // ===========================================
 
     @Transactional
     public void suspendDelivery(Long userId) {
@@ -174,7 +178,8 @@ public class AdminDeliveryService {
     }
 
     // ===========================================
-    // ============ Admin Delivery Active Methods ============
+    // ============ Admin Delivery Activate ============
+    // ===========================================
 
     @Transactional
     public void activateDelivery(Long userId) {
@@ -188,7 +193,8 @@ public class AdminDeliveryService {
     }
 
     // ===========================================
-    // ============ Admin Delivery Delete Methods ============
+    // ============ Admin Delivery Delete ============
+    // ===========================================
 
     @Transactional
     public void deleteDelivery(Long userId) {
@@ -200,5 +206,4 @@ public class AdminDeliveryService {
         profile.setStatus(DeliveryStatus.DELETED);
         profile.setUpdatedAt(LocalDateTime.now());
     }
-
 }
