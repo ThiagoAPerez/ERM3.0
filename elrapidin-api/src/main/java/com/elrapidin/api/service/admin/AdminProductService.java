@@ -32,7 +32,6 @@ public class AdminProductService {
         // ✅ PROVIDER REAL
         product.setProviderType(request.getProviderType());
         product.setProviderId(request.getProviderId());
-
         product.setCategory(request.getCategory());
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -116,7 +115,7 @@ public class AdminProductService {
                     dto.setProviderId(product.getProviderId());
 
                     // ⏳ se resolverá en el siguiente paso
-                    dto.setProviderName("PENDIENTE");
+                    dto.setProviderName(product.getName());
 
                     dto.setCategory(product.getCategory());
                     dto.setCostPrice(product.getCostPrice());
