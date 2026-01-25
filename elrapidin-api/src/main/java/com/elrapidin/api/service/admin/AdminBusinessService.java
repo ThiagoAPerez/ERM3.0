@@ -78,12 +78,14 @@ public class AdminBusinessService {
         business.setCoverUrl(request.coverUrl());
         business.setCategory(request.category());
 
+        // 🔧 NECESARIO
+        business.setStatus(BusinessStatus.INACTIVE);
+
         businessRepository.save(business);
 
         return toResponse(business);
     }
 
-    // ===================== LIST =====================
     // ===================== LIST =====================
     public List<BusinessResponse> getAllBusinesses() {
         return businessRepository

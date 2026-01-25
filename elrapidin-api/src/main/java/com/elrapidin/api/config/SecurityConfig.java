@@ -28,31 +28,28 @@ public class SecurityConfig {
         System.out.println(">>> SECURITY CONFIG CARGADA <<<");
 
         http
-                // API REST → sin CSRF
                 .csrf(csrf -> csrf.disable())
 
-                // Stateless (JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // Desactivar auth default
                 .formLogin(form -> form.disable())
                 .httpBasic(basic -> basic.disable())
 
-                // Reglas de acceso
                 .authorizeHttpRequests(auth -> auth
                         // públicos
                         .requestMatchers("/auth/**").permitAll()
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/businesses/**").permitAll()
 
-                        // roles
+                        // roles por dominio
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/delivery/**").hasRole("DELIVERY")
+                        .requestMatchers("/business/**").hasRole("BUSINESS")
+                        .requestMatchers("/user/**").hasRole("CLIENT")
 
-                        // todo lo demás
+                        // todo lo demás requiere token
                         .anyRequest().authenticated())
 
-                // JWT filter
                 .addFilterBefore(
                         jwtAuthenticationFilter,
                         UsernamePasswordAuthenticationFilter.class);

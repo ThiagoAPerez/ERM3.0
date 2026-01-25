@@ -1,13 +1,16 @@
 package com.elrapidin.api.dto.auth;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 
 public class LoginRequest {
 
     @NotBlank
+    @Size(min = 6)
     private String phone;
 
     @NotBlank
+    @Size(min = 6)
     private String password;
 
     public String getPhone() {
@@ -25,6 +28,4 @@ public class LoginRequest {
     public void setPassword(String password) {
         this.password = password;
     }
-
-    // getters & setters
 }

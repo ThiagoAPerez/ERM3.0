@@ -7,22 +7,27 @@ import java.util.List;
 
 public interface BusinessQueries {
 
+        // Perfil del negocio autenticado
         BusinessMeResponse getMyBusinessProfile(Long ownerUserId);
 
+        // Dashboard
         BusinessDashboardSummary getDashboardSummary(
-                        Long businessId,
+                        Long ownerUserId,
                         DateRange range);
 
+        // Órdenes activas / filtradas
         List<BusinessOrderListItem> getOrders(
-                        Long businessId,
+                        Long ownerUserId,
                         BusinessOrderFilter filter,
                         DateRange range);
 
+        // Detalle de orden
         BusinessOrderDetail getOrderDetail(
-                        Long businessId,
+                        Long ownerUserId,
                         Long orderId);
 
+        // Historial
         List<BusinessOrderListItem> getOrderHistory(
-                        Long businessId,
+                        Long ownerUserId,
                         DateRange range);
 }

@@ -1,5 +1,7 @@
 package com.elrapidin.api.dto.business;
 
+import com.elrapidin.api.domain.enums.businesses.BusinessStatus;
+
 public class BusinessMeResponse {
 
     private Long id;
@@ -12,6 +14,36 @@ public class BusinessMeResponse {
     private String logoUrl;
     private String coverUrl;
     private Integer preparationTimeMinutes;
+    private BusinessStatus status;
+
+    public BusinessMeResponse() {
+    }
+
+    public BusinessMeResponse(
+            Long id,
+            String name,
+            String description,
+            String phone,
+            String email,
+            String address,
+            String municipality,
+            String logoUrl,
+            String coverUrl,
+            Integer preparationTimeMinutes,
+            BusinessStatus status) {
+
+        this.id = id;
+        this.name = name;
+        this.description = description;
+        this.phone = phone;
+        this.email = email;
+        this.address = address;
+        this.municipality = municipality;
+        this.logoUrl = logoUrl;
+        this.coverUrl = coverUrl;
+        this.preparationTimeMinutes = preparationTimeMinutes;
+        this.status = status;
+    }
 
     // ===== GETTERS & SETTERS =====
 
@@ -93,5 +125,13 @@ public class BusinessMeResponse {
 
     public void setPreparationTimeMinutes(Integer preparationTimeMinutes) {
         this.preparationTimeMinutes = preparationTimeMinutes;
+    }
+
+    public BusinessStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(BusinessStatus status) {
+        this.status = status;
     }
 }

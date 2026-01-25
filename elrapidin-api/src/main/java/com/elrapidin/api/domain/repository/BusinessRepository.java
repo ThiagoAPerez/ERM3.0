@@ -1,7 +1,5 @@
 package com.elrapidin.api.domain.repository;
 
-import java.util.Optional;
-
 import com.elrapidin.api.domain.entity.businesses.BusinessEntity;
 import com.elrapidin.api.domain.enums.businesses.BusinessStatus;
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
@@ -24,5 +22,4 @@ public interface BusinessRepository extends JpaRepository<BusinessEntity, Long> 
     List<BusinessEntity> findByCategory(BusinessesCategory category);
 
     List<BusinessEntity> findByStatusNot(BusinessStatus status);
-
 }

@@ -6,16 +6,7 @@ import com.elrapidin.api.domain.entity.delivery.DeliveryProfileEntity;
 import com.elrapidin.api.domain.enums.user.UserRole;
 import com.elrapidin.api.domain.enums.user.UserStatus;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 @Entity
 @Table(name = "users")
@@ -28,7 +19,7 @@ public class UserEntity {
     @Column(nullable = false, unique = true, length = 20)
     private String phone;
 
-    @Column(unique = true)
+    @Column(nullable = false, unique = true)
     private String email;
 
     @Column(nullable = false)
@@ -42,15 +33,34 @@ public class UserEntity {
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private UserStatus status = UserStatus.ACTIVE;
+    @Column(nullable = false, length = 20)
+    private UserStatus status;
 
     private Long createdBy;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
 
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
+
+    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
+    private DeliveryProfileEntity deliveryProfile;
+
+    // ===== LIFECYCLE =====
+
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== GETTERS & SETTERS =====
 
     public Long getId() {
         return id;
@@ -120,20 +130,9 @@ public class UserEntity {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
-    }
-
-    @OneToOne(mappedBy = "user", fetch = FetchType.LAZY)
-    private DeliveryProfileEntity deliveryProfile;
 
     public DeliveryProfileEntity getDeliveryProfile() {
         return deliveryProfile;
@@ -142,7 +141,4 @@ public class UserEntity {
     public void setDeliveryProfile(DeliveryProfileEntity deliveryProfile) {
         this.deliveryProfile = deliveryProfile;
     }
-
-    // getters & setters
-
 }

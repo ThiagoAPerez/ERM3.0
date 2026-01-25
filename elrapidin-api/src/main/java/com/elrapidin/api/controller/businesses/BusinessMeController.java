@@ -1,8 +1,10 @@
 package com.elrapidin.api.controller.businesses;
 
 import com.elrapidin.api.dto.business.BusinessMeResponse;
+import com.elrapidin.api.exception.UnauthorizedException;
 import com.elrapidin.api.security.AuthenticatedUser;
 import com.elrapidin.api.service.businesses.BusinessQueries;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,8 +28,11 @@ public class BusinessMeController {
     public ResponseEntity<BusinessMeResponse> getMyBusiness(
             @AuthenticationPrincipal AuthenticatedUser user) {
 
+        if (user == null) {
+            throw new UnauthorizedException("Unauthorized");
+        }
+
         return ResponseEntity.ok(
-                businessQueries.getMyBusinessProfile(user.getUserId())
-        );
+                businessQueries.getMyBusinessProfile(user.getUserId()));
     }
 }

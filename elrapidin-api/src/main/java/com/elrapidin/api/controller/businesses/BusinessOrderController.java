@@ -5,11 +5,12 @@ import org.springframework.web.bind.annotation.*;
 
 import com.elrapidin.api.domain.entity.order.OrderEntity;
 import com.elrapidin.api.domain.enums.order.OrderStatus;
+import com.elrapidin.api.exception.UnauthorizedException;
 import com.elrapidin.api.security.AuthenticatedUser;
 import com.elrapidin.api.service.order.*;
 
 @RestController
-@RequestMapping("/api/business/orders")
+@RequestMapping("/business/orders")
 public class BusinessOrderController {
 
         private final OrderStateTransitionService stateTransitionService;
@@ -27,6 +28,8 @@ public class BusinessOrderController {
                         @PathVariable Long orderId,
                         @AuthenticationPrincipal AuthenticatedUser user) {
 
+                validate(user);
+
                 return stateTransitionService.transition(
                                 orderId,
                                 OrderStatus.ACCEPTED_BY_BUSINESS,
@@ -37,6 +40,8 @@ public class BusinessOrderController {
         public OrderEntity prepare(
                         @PathVariable Long orderId,
                         @AuthenticationPrincipal AuthenticatedUser user) {
+
+                validate(user);
 
                 return stateTransitionService.transition(
                                 orderId,
@@ -49,6 +54,8 @@ public class BusinessOrderController {
                         @PathVariable Long orderId,
                         @AuthenticationPrincipal AuthenticatedUser user) {
 
+                validate(user);
+
                 return stateTransitionService.transition(
                                 orderId,
                                 OrderStatus.READY_FOR_PICKUP,
@@ -60,8 +67,16 @@ public class BusinessOrderController {
                         @PathVariable Long orderId,
                         @AuthenticationPrincipal AuthenticatedUser user) {
 
+                validate(user);
+
                 return cancellationService.cancel(
                                 orderId,
                                 new ActorContext(ActorType.BUSINESS, user.getUserId()));
+        }
+
+        private void validate(AuthenticatedUser user) {
+                if (user == null) {
+                        throw new UnauthorizedException("Unauthorized");
+                }
         }
 }

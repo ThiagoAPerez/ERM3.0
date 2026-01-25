@@ -36,17 +36,35 @@ public class BusinessEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private BusinessStatus status = BusinessStatus.ACTIVE;
+    private BusinessStatus status;
 
     @Column(nullable = false)
     private Integer preparationTimeMinutes = 20;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(nullable = false)
     private LocalDateTime updatedAt;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private BusinessesCategory category;
+
+    // ===== LIFECYCLE =====
+
+    @PrePersist
+    public void onCreate() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = this.createdAt;
+    }
+
+    @PreUpdate
+    public void onUpdate() {
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // ===== GETTERS & SETTERS =====
 
     public Long getId() {
         return id;
@@ -148,16 +166,8 @@ public class BusinessEntity {
         return createdAt;
     }
 
-    public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
-    }
-
-    public void setUpdatedAt(LocalDateTime updatedAt) {
-        this.updatedAt = updatedAt;
     }
 
     public BusinessesCategory getCategory() {
@@ -168,5 +178,3 @@ public class BusinessEntity {
         this.category = category;
     }
 }
-
-// ===== GETTERS & SETTERS =====
