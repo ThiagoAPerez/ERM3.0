@@ -13,6 +13,7 @@ public record CreateBusinessRequest(
                 @NotBlank String phone,
                 @NotBlank String email,
                 @NotBlank String temporaryPassword,
+                @NotNull String status,
 
                 @NotNull BusinessesCategory category, // 🔥 OBLIGATORIO
 

@@ -31,6 +31,42 @@ public class BusinessResponse {
                 this.municipality = municipality;
                 this.status = status;
                 this.category = category;
+
+        }
+
+        public void setId(Long id) {
+                this.id = id;
+        }
+
+        public void setOwnerUserId(Long ownerUserId) {
+                this.ownerUserId = ownerUserId;
+        }
+
+        public void setName(String name) {
+                this.name = name;
+        }
+
+        public void setPhone(String phone) {
+                this.phone = phone;
+        }
+
+        public void setEmail(String email) {
+                this.email = email;
+        }
+
+        public void setMunicipality(String municipality) {
+                this.municipality = municipality;
+        }
+
+        public void setStatus(BusinessStatus status) {
+                this.status = status;
+        }
+
+        public void setCategory(BusinessesCategory category) {
+                this.category = category;
+        }
+
+        public BusinessResponse() {
         }
 
         public Long getId() {

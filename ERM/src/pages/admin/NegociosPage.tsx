@@ -1,20 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Store, 
-  Plus, 
-  Search, 
+import {
+  Store,
+  Plus,
+  Search,
   Filter,
   MoreVertical,
   Edit,
   Power,
   Trash2,
   MapPin,
-  Phone
+  Phone,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -41,72 +42,31 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type TipoNegocio = "restaurante" | "mensajeria" | "motocarguero";
+ type BusinessCategory =
+  | "BUSINESS"
+  | "STORE"
+  | "LICORERA"
+  | "RESTAURANT"
+  | "MEDICAMENT_STORE"
+  | "OTHER";
+type BusinessStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
-interface Negocio {
+export interface Negocio {
   id: string;
   nombre: string;
-  tipo: TipoNegocio;
+  tipo: BusinessCategory;
   direccion: string;
   municipio: string;
   departamento?: string;
   telefono: string;
   email?: string;
   password?: string;
-  estado: "active" | "inactive";
+  estado: BusinessStatus;
   logo?: string;
   imagenFondo?: string;
   descripcion?: string;
 }
-
-// Mock data - preparado para integración backend
-const mockNegocios: Negocio[] = [
-  {
-    id: "1",
-    nombre: "Burger House",
-    tipo: "restaurante",
-    direccion: "Cra 45 #32-12",
-    municipio: "Marinilla",
-    departamento: "Antioquia",
-    telefono: "3001234567",
-    estado: "active",
-    descripcion: "Las mejores hamburguesas de la región",
-  },
-  {
-    id: "2",
-    nombre: "Pizza Express",
-    tipo: "restaurante",
-    direccion: "Calle 30 #40-15",
-    municipio: "El Retiro",
-    departamento: "Antioquia",
-    telefono: "3009876543",
-    estado: "active",
-    descripcion: "Pizza artesanal al horno de leña",
-  },
-  {
-    id: "3",
-    nombre: "Envíos Rápidos",
-    tipo: "mensajeria",
-    direccion: "Centro",
-    municipio: "La Ceja",
-    departamento: "Antioquia",
-    telefono: "3005551234",
-    estado: "inactive",
-    descripcion: "Servicio de mensajería express",
-  },
-  {
-    id: "4",
-    nombre: "MotoCargas El Paisa",
-    tipo: "motocarguero",
-    direccion: "Parque Principal",
-    municipio: "Rionegro",
-    departamento: "Antioquia",
-    telefono: "3007778899",
-    estado: "active",
-    descripcion: "Transporte de carga en moto",
-  },
-];
-
+/* ===================== UI CONSTANTS (INTOCABLES) ===================== */
 const municipios = [
   "Marinilla",
   "El Retiro",
@@ -118,29 +78,39 @@ const municipios = [
   "San Vicente",
 ];
 
-const tipoLabels: Record<TipoNegocio, string> = {
-  restaurante: "Restaurante",
-  mensajeria: "Mensajería",
-  motocarguero: "Motocarguero",
+const tipoLabels: Record<BusinessCategory, string> = {
+  BUSINESS: "Negocio",
+  STORE: "Tienda",
+  LICORERA: "Licorera",
+  RESTAURANT: "Restaurante",
+  MEDICAMENT_STORE: "Droguería",
+  OTHER: "Otro",
 };
 
-const tipoColors: Record<TipoNegocio, string> = {
-  restaurante: "bg-accent/10 text-accent",
-  mensajeria: "bg-emphasis/10 text-emphasis",
-  motocarguero: "bg-blue-500/10 text-blue-400",
+const tipoColors: Record<BusinessCategory, string> = {
+  BUSINESS: "bg-emphasis/10 text-emphasis",
+  STORE: "bg-blue-500/10 text-blue-400",
+  LICORERA: "bg-purple-500/10 text-purple-400",
+  RESTAURANT: "bg-accent/10 text-accent",
+  MEDICAMENT_STORE: "bg-green-500/10 text-green-400",
+  OTHER: "bg-muted text-muted-foreground",
 };
+
+/* ===================== CONS ===================== */
 
 const NegociosPage = () => {
-  const [negocios, setNegocios] = useState<Negocio[]>(mockNegocios);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterTipo, setFilterTipo] = useState<TipoNegocio | "all">("all");
+  const [filterTipo, setFilterTipo] = useState<BusinessCategory | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNegocio, setEditingNegocio] = useState<Negocio | null>(null);
-  
-  // Form state
+
+  // =============================================
+  //==================== FORMADATA ===============
+
   const [formData, setFormData] = useState({
     nombre: "",
-    tipo: "restaurante" as TipoNegocio,
+    tipo: "RESTAURANT" as BusinessCategory,
     direccion: "",
     municipio: "",
     departamento: "",
@@ -150,11 +120,31 @@ const NegociosPage = () => {
     descripcion: "",
   });
 
+  //============================================================
+  // =================== LOAD ================================
+
+  const loadBusinesses = async () => {
+    const res = await api.get<Negocio[]>("/admin/businesses");
+    setNegocios(res.data.map(mapBackendToNegocio));
+  };
+
+  useEffect(() => {
+    loadBusinesses();
+  }, []);
+
+  //============================================================
+  // =================== FILTRO ================================
+
   const filteredNegocios = negocios.filter((n) => {
-    const matchesSearch = n.nombre.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = n.nombre
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     const matchesTipo = filterTipo === "all" || n.tipo === filterTipo;
     return matchesSearch && matchesTipo;
   });
+
+  //============================================================
+  // =================== CREAR ================================
 
   const handleOpenDialog = (negocio?: Negocio) => {
     if (negocio) {
@@ -164,17 +154,17 @@ const NegociosPage = () => {
         tipo: negocio.tipo,
         direccion: negocio.direccion,
         municipio: negocio.municipio,
-        departamento: negocio.departamento || "",
+        departamento: negocio.departamento ?? "",
         telefono: negocio.telefono,
-        email: negocio.email || "",
+        email: negocio.email ?? "",
         password: "",
-        descripcion: negocio.descripcion || "",
+        descripcion: negocio.descripcion ?? "",
       });
     } else {
       setEditingNegocio(null);
       setFormData({
         nombre: "",
-        tipo: "restaurante",
+        tipo: "RESTAURANT" as BusinessCategory,
         direccion: "",
         municipio: "",
         departamento: "",
@@ -184,38 +174,124 @@ const NegociosPage = () => {
         descripcion: "",
       });
     }
+
     setIsDialogOpen(true);
   };
+  //============================================================
+  // ===================  UPDATE ================================
 
-  const handleSave = () => {
-    if (editingNegocio) {
-      setNegocios(negocios.map(n => 
-        n.id === editingNegocio.id 
-          ? { ...n, ...formData }
-          : n
-      ));
-    } else {
-      const newNegocio: Negocio = {
-        id: Date.now().toString(),
-        ...formData,
-        estado: "active",
+  const handleUpdate = async () => {
+    if (!editingNegocio) return;
+
+    try {
+      const payload = {
+        name: formData.nombre,
+        phone: formData.telefono,
+        email: formData.email,
+        address: formData.direccion,
+        municipality: formData.municipio,
+        description: formData.descripcion,
+        logoUrl: null,
+        coverUrl: null,
+        category: formData.tipo,
       };
-      setNegocios([...negocios, newNegocio]);
+
+      await api.put(`/admin/businesses/${editingNegocio.id}`, payload);
+
+      await loadBusinesses();
+      setIsDialogOpen(false);
+      setEditingNegocio(null);
+    } catch (err: any) {
+      console.error("ERROR UPDATE BUSINESS", err.response?.data || err);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleToggleEstado = (id: string) => {
-    setNegocios(negocios.map(n =>
-      n.id === id
-        ? { ...n, estado: n.estado === "active" ? "inactive" : "active" }
-        : n
-    ));
+  //============================================================
+  // =================== MAPEARLO ================================
+
+  const mapBackendToNegocio = (b: any): Negocio => ({
+    id: b.id,
+    nombre: b.name,
+    direccion: b.address,
+    municipio: b.municipality,
+    departamento: "", // si no viene
+    telefono: b.phone,
+    email: b.email,
+    estado: b.status,
+    tipo: b.category,
+    descripcion: b.description,
+    logo: b.logoUrl,
+    imagenFondo: b.coverUrl,
+  });
+
+  //============================================================
+  // =================== GUARDAR ================================
+
+  const handleSave = async () => {
+    try {
+      if (editingNegocio) {
+        await handleUpdate();
+        return;
+      }
+
+      if (!formData.password) {
+        throw new Error("La contraseña temporal es obligatoria");
+      }
+
+      const payload = {
+        name: formData.nombre,
+        address: formData.direccion,
+        municipality: formData.municipio,
+        phone: formData.telefono,
+        email: formData.email,
+        temporaryPassword: formData.password,
+        status: "ACTIVE",
+        category: formData.tipo,
+        description: formData.descripcion,
+        logoUrl: null,
+        coverUrl: null,
+      };
+
+      await api.post("/admin/businesses", payload);
+
+      await loadBusinesses();
+      setIsDialogOpen(false);
+    } catch (err: any) {
+      console.error("ERROR CREATE BUSINESS", err.response?.data || err);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setNegocios(negocios.filter(n => n.id !== id));
+  //============================================================
+  // =================== ESTADOS ================================
+
+  const handleToggleEstado = async (negocio: Negocio) => {
+    try {
+      if (negocio.estado === "ACTIVE") {
+        await api.patch(`/admin/businesses/${negocio.id}/deactivate`);
+      } else {
+        await api.patch(`/admin/businesses/${negocio.id}/activate`);
+      }
+
+      await loadBusinesses();
+    } catch (err: any) {
+      console.error("ERROR TOGGLE STATUS", err.response?.data || err);
+    }
   };
+
+  //============================================================
+  // =================== ELIMINAR/EVENT ================================
+
+  const handleSuspend = async (id: string) => {
+    try {
+      await api.patch(`/admin/businesses/${id}/suspend`);
+      await loadBusinesses();
+    } catch (err: any) {
+      console.error("ERROR SUSPEND BUSINESS", err.response?.data || err);
+    }
+  };
+
+  //============================================================
+  // =================== UI ================================
 
   return (
     <div className="space-y-6">
@@ -242,16 +318,23 @@ const NegociosPage = () => {
             className="pl-10"
           />
         </div>
-        <Select value={filterTipo} onValueChange={(v) => setFilterTipo(v as TipoNegocio | "all")}>
+        <Select
+          value={filterTipo}
+          onValueChange={(v) => setFilterTipo(v as BusinessCategory | "all")}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filtrar por tipo" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="restaurante">Restaurantes</SelectItem>
-            <SelectItem value="mensajeria">Mensajería</SelectItem>
-            <SelectItem value="motocarguero">Motocarguero</SelectItem>
+            <SelectItem value="BUSINESS">Negocios</SelectItem>
+            <SelectItem value="STORE">Tiendas</SelectItem>
+            <SelectItem value="LICORERA">Licorera</SelectItem>
+            <SelectItem value="RESTAURANT">Restaurante</SelectItem>
+            <SelectItem value="MEDICAMENT_STORE">Farmacia</SelectItem>
+            <SelectItem value="SERVICE">Servicios</SelectItem>
+            <SelectItem value="OTHER">Otro</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -274,13 +357,17 @@ const NegociosPage = () => {
                   <Store className="w-7 h-7 text-emphasis" />
                 </div>
                 <div className="pb-1">
-                  <h3 className="font-display font-semibold text-lg">{negocio.nombre}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoColors[negocio.tipo]}`}>
+                  <h3 className="font-display font-semibold text-lg">
+                    {negocio.nombre}
+                  </h3>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${tipoColors[negocio.tipo]}`}
+                  >
                     {tipoLabels[negocio.tipo]}
                   </span>
                 </div>
               </div>
-              
+
               {/* Actions Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -292,22 +379,36 @@ const NegociosPage = () => {
                     <MoreVertical className="w-4 h-4" />
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent align="end">
+                  {/* Edit */}
                   <DropdownMenuItem onClick={() => handleOpenDialog(negocio)}>
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleToggleEstado(negocio.id)}>
+
+                  {/* Activate / Deactivate */}
+                  <DropdownMenuItem
+                    onClick={() => handleToggleEstado(negocio)}
+                    className={
+                      negocio.estado === "ACTIVE"
+                        ? "text-yellow-600 focus:text-yellow-600"
+                        : "text-green-600 focus:text-green-600"
+                    }
+                  >
                     <Power className="w-4 h-4 mr-2" />
-                    {negocio.estado === "active" ? "Desactivar" : "Activar"}
+                    {negocio.estado === "ACTIVE" ? "Desactivar" : "Activar"}
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem 
-                    onClick={() => handleDelete(negocio.id)}
+
+                  {/* Delete */}
+                  <DropdownMenuItem
+                    onClick={() => handleSuspend(negocio.id)}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Eliminar
+                    Suspender
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -323,7 +424,9 @@ const NegociosPage = () => {
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="w-4 h-4" />
-                  <span className="truncate">{negocio.direccion}, {negocio.municipio}</span>
+                  <span className="truncate">
+                    {negocio.direccion}, {negocio.municipio}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="w-4 h-4" />
@@ -352,10 +455,9 @@ const NegociosPage = () => {
               {editingNegocio ? "Editar Negocio" : "Nuevo Negocio"}
             </DialogTitle>
             <DialogDescription>
-              {editingNegocio 
+              {editingNegocio
                 ? "Modifica la información del negocio"
-                : "Completa la información para registrar un nuevo negocio"
-              }
+                : "Completa la información para registrar un nuevo negocio"}
             </DialogDescription>
           </DialogHeader>
 
@@ -365,24 +467,32 @@ const NegociosPage = () => {
               <Input
                 id="nombre"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: e.target.value })
+                }
                 placeholder="Nombre del negocio"
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="tipo">Tipo</Label>
-              <Select 
-                value={formData.tipo} 
-                onValueChange={(v) => setFormData({ ...formData, tipo: v as TipoNegocio })}
+              <Select
+                value={formData.tipo}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, tipo: v as BusinessCategory })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="restaurante">Restaurante</SelectItem>
-                  <SelectItem value="mensajeria">Mensajería</SelectItem>
-                  <SelectItem value="motocarguero">Motocarguero</SelectItem>
+                  <SelectItem value="BUSINESS">Negocio</SelectItem>
+                  <SelectItem value="STORE">Tienda</SelectItem>
+                  <SelectItem value="LICORERA">Licorera</SelectItem>
+                  <SelectItem value="RESTAURANT">Restaurante</SelectItem>
+                  <SelectItem value="MEDICAMENT_STORE">Farmacia</SelectItem>
+                  <SelectItem value="SERVICE">Servcios</SelectItem>
+                  <SelectItem value="OTHER">Otro</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -392,7 +502,9 @@ const NegociosPage = () => {
               <Input
                 id="direccion"
                 value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, direccion: e.target.value })
+                }
                 placeholder="Ej: Cra 45 #32-12"
               />
             </div>
@@ -402,14 +514,18 @@ const NegociosPage = () => {
                 <Label htmlFor="municipio">Municipio / Pueblo</Label>
                 <Select
                   value={formData.municipio}
-                  onValueChange={(v) => setFormData({ ...formData, municipio: v })}
+                  onValueChange={(v) =>
+                    setFormData({ ...formData, municipio: v })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Seleccionar municipio" />
                   </SelectTrigger>
                   <SelectContent>
                     {municipios.map((m) => (
-                      <SelectItem key={m} value={m}>{m}</SelectItem>
+                      <SelectItem key={m} value={m}>
+                        {m}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -419,7 +535,9 @@ const NegociosPage = () => {
                 <Input
                   id="departamento"
                   value={formData.departamento}
-                  onChange={(e) => setFormData({ ...formData, departamento: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, departamento: e.target.value })
+                  }
                   placeholder="Ej: Antioquia"
                 />
               </div>
@@ -430,7 +548,9 @@ const NegociosPage = () => {
               <Input
                 id="telefono"
                 value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, telefono: e.target.value })
+                }
                 placeholder="Número de teléfono"
               />
             </div>
@@ -445,7 +565,9 @@ const NegociosPage = () => {
                     id="email"
                     type="email"
                     value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
                     placeholder="negocio@email.com"
                   />
                 </div>
@@ -455,8 +577,14 @@ const NegociosPage = () => {
                     id="password"
                     type="password"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder={editingNegocio ? "Dejar vacío para no cambiar" : "Contraseña inicial"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    placeholder={
+                      editingNegocio
+                        ? "Dejar vacío para no cambiar"
+                        : "Contraseña inicial"
+                    }
                   />
                 </div>
               </div>
@@ -470,7 +598,9 @@ const NegociosPage = () => {
               <Textarea
                 id="descripcion"
                 value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, descripcion: e.target.value })
+                }
                 placeholder="Descripción del negocio"
                 rows={3}
               />

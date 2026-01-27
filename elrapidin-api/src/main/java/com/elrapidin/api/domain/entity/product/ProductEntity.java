@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import com.elrapidin.api.domain.enums.businesses.ProviderType;
+import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 import com.elrapidin.api.domain.enums.product.ProductStatus;
 
@@ -22,6 +23,10 @@ public class ProductEntity {
     @Enumerated(EnumType.STRING)
     @Column(name = "provider_type", nullable = false, length = 20)
     private ProviderType providerType;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "provider_category", nullable = false, length = 20)
+    private BusinessesCategory providerCategory;
 
     @Column(name = "provider_id", nullable = false)
     private Long providerId;
@@ -74,6 +79,8 @@ public class ProductEntity {
     public ProviderType getProviderType() {
         return providerType;
     }
+
+    
 
     public void setProviderType(ProviderType providerType) {
         this.providerType = providerType;
@@ -173,5 +180,13 @@ public class ProductEntity {
 
     public void setStatus(ProductStatus status) {
         this.status = status;
+    }
+
+    public BusinessesCategory getProviderCategory() {
+        return providerCategory;
+    }
+
+    public void setProviderCategory(BusinessesCategory providerCategory) {
+        this.providerCategory = providerCategory;
     }
 }

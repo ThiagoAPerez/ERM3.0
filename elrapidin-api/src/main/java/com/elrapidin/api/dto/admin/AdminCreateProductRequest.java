@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.domain.enums.businesses.ProviderType;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 
@@ -17,6 +18,9 @@ public class AdminCreateProductRequest {
 
     @NotNull
     private Long providerId;
+
+    @NotNull
+    private BusinessesCategory providerCategory;
 
     // ===== PRODUCTO =====
 
@@ -98,6 +102,14 @@ public class AdminCreateProductRequest {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public BusinessesCategory getProviderCategory() {
+        return providerCategory;
+    }
+
+    public void setProviderCategory(BusinessesCategory providerCategory) {
+        this.providerCategory = providerCategory;
     }
 
     // ===== GETTERS & SETTERS =====

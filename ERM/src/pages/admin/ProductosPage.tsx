@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { 
-  Package, 
-  Plus, 
-  Search, 
+import {
+  Package,
+  Plus,
+  Search,
   Filter,
   MoreVertical,
   Edit,
@@ -12,7 +12,7 @@ import {
   DollarSign,
   AlertCircle,
   Store,
-  ShoppingCart
+  ShoppingCart,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -43,192 +43,326 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
-type TipoPropietario = "negocio" | "tienda";
+/* =====================  TYPES  ===================== */
+//==========================================================
+
+type ProviderType = "BUSINESS" | "STORE" | "SERVICE";
+
+type ProviderCategory =
+  | "BUSINESS"
+  | "STORE"
+  | "LICORERA"
+  | "RESTAURANT"
+  | "MEDICAMENT_STORE"
+  | "OTHER"
+  | "SERVICE";
+
+type ProductCategory =
+  | "FOOD"
+  | "DRINK"
+  | "ALCOHOL"
+  | "MEDICINE"
+  | "GROCERY"
+  | "OTHER";
+
+type ProductStatus = "ACTIVE" | "INACTIVE" | "DELETED";
+
+/* =====================  INTERFACES  ===================== */
+//==========================================================
+
+interface Negocio {
+  id: number;
+  ownerUserId: number;
+  name: string;
+  phone: string;
+  email: string;
+  municipality: string;
+  status: "ACTIVE" | "INACTIVE" | "SUSPENDED";
+  category:
+    | "RESTAURANT"
+    | "STORE"
+    | "LICORERA"
+    | "MEDICAMENT_STORE"
+    | "SERVICE"
+    | "OTHER";
+}
 
 interface Producto {
   id: string;
   nombre: string;
-  descripcion: string;
-  tipoPropietario: TipoPropietario;
-  propietarioId: string;
-  propietarioNombre: string;
+  description: string;
+  providerType: ProviderType;
+  providerId: string;
+  providerCategory: ProviderCategory;
+  category: ProductCategory;
   costPrice: number;
-  price: number;
-  estado: "active" | "inactive";
-  imagen?: string;
+  saleprice: number;
+  imageUrl: string;
+  status: ProductStatus;
 }
 
-// Mock data - preparado para integración backend
-const mockProductos: Producto[] = [
-  {
-    id: "1",
-    nombre: "Hamburguesa Clásica",
-    descripcion: "Carne de res 150g, lechuga, tomate, cebolla y salsas",
-    tipoPropietario: "negocio",
-    propietarioId: "1",
-    propietarioNombre: "Burger House",
-    costPrice: 12000,
-    price: 22000,
-    estado: "active",
-  },
-  {
-    id: "2",
-    nombre: "Pizza Pepperoni",
-    descripcion: "Pizza mediana con pepperoni, queso mozzarella y salsa de tomate",
-    tipoPropietario: "negocio",
-    propietarioId: "2",
-    propietarioNombre: "Pizza Express",
-    costPrice: 18000,
-    price: 35000,
-    estado: "active",
-  },
-  {
-    id: "3",
-    nombre: "Hamburguesa Doble",
-    descripcion: "Doble carne 300g, doble queso, tocino, lechuga y salsas especiales",
-    tipoPropietario: "negocio",
-    propietarioId: "1",
-    propietarioNombre: "Burger House",
-    costPrice: 18000,
-    price: 32000,
-    estado: "active",
-  },
-  {
-    id: "4",
-    nombre: "Arroz Diana 1kg",
-    descripcion: "Arroz blanco premium para el hogar",
-    tipoPropietario: "tienda",
-    propietarioId: "t1",
-    propietarioNombre: "Supermercado El Ahorro",
-    costPrice: 3500,
-    price: 4500,
-    estado: "active",
-  },
-  {
-    id: "5",
-    nombre: "Acetaminofén 500mg",
-    descripcion: "Caja x 20 tabletas para el dolor",
-    tipoPropietario: "tienda",
-    propietarioId: "t2",
-    propietarioNombre: "Farmacia Salud Total",
-    costPrice: 6000,
-    price: 8500,
-    estado: "active",
-  },
-];
+const providerColors: Record<ProviderType, string> = {
+  BUSINESS: "bg-emphasis/10 text-emphasis",
+  STORE: "bg-blue-500/10 text-blue-400",
+  SERVICE: "bg-purple-500/10 text-purple-400",
+};
 
-const mockNegocios = [
-  { id: "1", nombre: "Burger House" },
-  { id: "2", nombre: "Pizza Express" },
-  { id: "3", nombre: "Sushi Master" },
-];
-
-const mockTiendas = [
-  { id: "t1", nombre: "Supermercado El Ahorro" },
-  { id: "t2", nombre: "Farmacia Salud Total" },
-  { id: "t3", nombre: "Tienda Don José" },
-  { id: "t4", nombre: "Licorería El Barril" },
-];
-
+/* =====================  CONSTANTS  ===================== */
+//==========================================================
 const ProductosPage = () => {
-  const [productos, setProductos] = useState<Producto[]>(mockProductos);
+  const [productos, setProductos] = useState<Producto[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
+
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterNegocio, setFilterNegocio] = useState<string>("all");
+
+  const [filterCategory, setFilterCategory] = useState<ProductCategory | "all">(
+    "all",
+  );
+
+  const [filterNegocio, setFilterNegocio] = useState<string | "all">("all");
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   const [editingProducto, setEditingProducto] = useState<Producto | null>(null);
+
+  // =============================================
+  //==================== FORMADATA ===============
 
   const [formData, setFormData] = useState({
     nombre: "",
     descripcion: "",
-    tipoPropietario: "negocio" as TipoPropietario,
-    propietarioId: "",
+    providerType: "BUSINESS" as ProviderType,
+    providerId: "", // ✅ string vacío
+    providerCategory: "RESTAURANT" as ProviderCategory,
+    category: "FOOD" as ProductCategory,
     costPrice: "",
     price: "",
+    status: "ACTIVE" as ProductStatus,
   });
 
-  const filteredProductos = productos.filter((p) => {
-    const matchesSearch = p.nombre.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesNegocio = filterNegocio === "all" || p.propietarioId === filterNegocio;
-    return matchesSearch && matchesNegocio;
+  // =============================================
+  //==================== CARGAR NEGOCIOS ===============
+
+  useEffect(() => {
+    const loadNegocios = async () => {
+      const res = await api.get<Negocio[]>("/admin/businesses");
+      setNegocios(res.data);
+    };
+
+    loadNegocios();
+  }, []);
+
+  // =============================================
+  //==================== LABLELS ===============
+
+  const providerLabels: Record<ProviderType, string> = {
+    BUSINESS: "Negocio",
+    STORE: "Tienda",
+    SERVICE: "Servicios",
+  };
+
+  const providerCategoryLabels: Record<ProviderCategory, string> = {
+    BUSINESS: "Negocio",
+    STORE: "Tienda",
+    LICORERA: "Licorera",
+    RESTAURANT: "Restaurante",
+    MEDICAMENT_STORE: "Farmacia",
+    SERVICE: "Servicios",
+    OTHER: "Otros",
+  };
+
+  //============================================================
+  // =================== CALCULAR GANANCIA =====================
+
+  const calcularMargen = (cost: number, price: number) => {
+    if (price === 0) return 0;
+    return (((price - cost) / price) * 100).toFixed(1);
+  };
+  //============================================================
+  // ===================   MAPEARLO =============================
+
+  const mapBackendToProducto = (p: any): Producto => ({
+    id: p.id,
+    nombre: p.name,
+    description: p.description,
+    providerType: p.providerType,
+    providerId: String(p.providerId),
+    providerCategory: p.providerCategory,
+    category: p.category,
+    costPrice: p.costPrice,
+    saleprice: p.salePrice,
+    imageUrl: p.imageUrl,
+    status: p.status,
   });
+
+  //============================================================
+  // ===================      LOAD =============================
+
+  const loadProducts = async () => {
+    const res = await api.get<Producto[]>("/admin/products");
+    setProductos(res.data.map(mapBackendToProducto));
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  //============================================================
+  // =================== FILTRAR ================================
+
+  const filteredProductos = productos.filter((p) => {
+    const matchesSearch = p.nombre
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
+    const matchesCategory =
+      filterCategory === "all" || p.category === filterCategory;
+
+    const matchesNegocio =
+      filterNegocio === "all" || p.providerId === filterNegocio;
+
+    return matchesSearch && matchesCategory && matchesNegocio;
+  });
+
+  //============================================================
+  // =================== GUARDAR ================================
+
+  const handleSave = async () => {
+    try {
+      if (editingProducto) {
+        await handleUpdate();
+        return;
+      }
+
+      if (!formData.nombre || !formData.providerId) {
+        throw new Error("Campos obligatorios faltantes");
+      }
+
+      const payload = {
+        providerType: formData.providerType,
+        providerId: Number(formData.providerId),
+        providerCategory: formData.providerCategory, // 👈 BusinessesCategory
+
+        category: formData.category, // ProductCategory
+        name: formData.nombre,
+        description: formData.descripcion,
+
+        costPrice: parseFloat(formData.costPrice),
+        salePrice: parseFloat(formData.price),
+
+        imageUrl: null,
+      };
+
+      await api.post("/admin/products", payload);
+
+      await loadProducts();
+      setIsDialogOpen(false);
+    } catch (err: any) {
+      console.error("ERROR CREATE PRODUCT", err.response?.data || err);
+    }
+  };
+
+  //============================================================
+  // =================== DIALOG ================================
 
   const handleOpenDialog = (producto?: Producto) => {
     if (producto) {
       setEditingProducto(producto);
       setFormData({
         nombre: producto.nombre,
-        descripcion: producto.descripcion,
-        tipoPropietario: producto.tipoPropietario,
-        propietarioId: producto.propietarioId,
+        descripcion: producto.description,
+
+        providerType: producto.providerType, // ✅ ESTA ES LA CLAVE
+        providerId: "",
+        providerCategory: producto.providerCategory,
+
         costPrice: producto.costPrice.toString(),
-        price: producto.price.toString(),
+        price: producto.saleprice.toString(),
+        category: producto.category,
+        status: producto.status,
       });
     } else {
       setEditingProducto(null);
       setFormData({
         nombre: "",
         descripcion: "",
-        tipoPropietario: "negocio",
-        propietarioId: "",
+        providerType: "BUSINESS" as ProviderType,
+        providerId: "",
         costPrice: "",
         price: "",
+        category: "FOOD" as ProductCategory,
+        status: "ACTIVE" as ProductStatus,
+        providerCategory: "RESTAURANT" as ProviderCategory,
       });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    const propietarioList = formData.tipoPropietario === "negocio" ? mockNegocios : mockTiendas;
-    const propietario = propietarioList.find(p => p.id === formData.propietarioId);
-    if (editingProducto) {
-      setProductos(productos.map(p =>
-        p.id === editingProducto.id
-          ? { 
-              ...p, 
-              nombre: formData.nombre,
-              descripcion: formData.descripcion,
-              tipoPropietario: formData.tipoPropietario,
-              propietarioId: formData.propietarioId,
-              propietarioNombre: propietario?.nombre || "",
-              costPrice: parseFloat(formData.costPrice) || 0,
-              price: parseFloat(formData.price) || 0,
-            }
-          : p
-      ));
-    } else {
-      const newProducto: Producto = {
-        id: Date.now().toString(),
-        nombre: formData.nombre,
-        descripcion: formData.descripcion,
-        tipoPropietario: formData.tipoPropietario,
-        propietarioId: formData.propietarioId,
-        propietarioNombre: propietario?.nombre || "",
-        costPrice: parseFloat(formData.costPrice) || 0,
-        price: parseFloat(formData.price) || 0,
-        estado: "active",
+  //============================================================
+  // ===================  UPDATE ================================
+
+  const handleUpdate = async () => {
+    if (!editingProducto) return;
+
+    try {
+      const payload = {
+        providerType: formData.providerType,
+        providerId: Number(formData.providerId),
+        providerCategory: formData.providerCategory, // 👈 BusinessesCategory
+
+        category: formData.category, // ProductCategory
+        name: formData.nombre,
+        description: formData.descripcion,
+
+        costPrice: parseFloat(formData.costPrice),
+        salePrice: parseFloat(formData.price),
+
+        imageUrl: null,
       };
-      setProductos([...productos, newProducto]);
+
+      await api.put(`/admin/products/${editingProducto.id}`, payload);
+
+      await loadProducts();
+      setIsDialogOpen(false);
+      setEditingProducto(null);
+    } catch (err: any) {
+      console.error("ERROR UPDATE PODUCTO", err.response?.data || err);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleToggleEstado = (id: string) => {
-    setProductos(productos.map(p =>
-      p.id === id
-        ? { ...p, estado: p.estado === "active" ? "inactive" : "active" }
-        : p
-    ));
+  //============================================================
+  // =================== ESTADOS ================================
+
+  const handleToggleEstado = async (p: Producto) => {
+    try {
+      if (p.status === "ACTIVE") {
+        await api.patch(`/admin/products/${p.id}/deactivate`);
+      } else {
+        await api.patch(`/admin/products/${p.id}/activate`);
+      }
+
+      await loadProducts();
+    } catch (err: any) {
+      console.error("ERROR TOGGLE STATUS", err.response?.data || err);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setProductos(productos.filter(p => p.id !== id));
+  //============================================================
+  // =================== ELIMINAR/EVENT ================================
+
+  const handleDelete = async (id: string) => {
+    try {
+      await api.delete(`/admin/products/${id}`);
+      await loadProducts();
+    } catch (err: any) {
+      console.error("ERROR DELETED PRODUCT", err.response?.data || err);
+    }
   };
 
-  const calcularMargen = (cost: number, price: number) => {
-    if (price === 0) return 0;
-    return ((price - cost) / price * 100).toFixed(1);
-  };
+  //============================================================
+  // =================== UI ================================
 
   return (
     <div className="space-y-6">
@@ -243,7 +377,6 @@ const ProductosPage = () => {
           </Button>
         }
       />
-
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -258,22 +391,25 @@ const ProductosPage = () => {
         <Select value={filterNegocio} onValueChange={setFilterNegocio}>
           <SelectTrigger className="w-full sm:w-[220px]">
             <Store className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Filtrar propietario" />
+            <SelectValue placeholder="Filtrar negocio" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">— Negocios —</div>
-            {mockNegocios.map(n => (
-              <SelectItem key={n.id} value={n.id}>{n.nombre}</SelectItem>
-            ))}
-            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">— Tiendas —</div>
-            {mockTiendas.map(t => (
-              <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>
+
+            <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
+              — Negocios —
+            </div>
+
+            {negocios.map((n) => (
+              <SelectItem key={n.id} value={String(n.id)}>
+                {n.name}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </div>
-
+      admin/ne
       {/* Productos Table */}
       <div className="rounded-xl border border-border overflow-hidden">
         <div className="overflow-x-auto">
@@ -292,7 +428,9 @@ const ProductosPage = () => {
             </thead>
             <tbody>
               {filteredProductos.map((producto, index) => {
-                const margen = parseFloat(calcularMargen(producto.costPrice, producto.price) || "0");
+                const margen = parseFloat(
+                  calcularMargen(producto.costPrice, producto.saleprice) || "0",
+                );
                 const margenBajo = margen < 30;
 
                 return (
@@ -311,28 +449,26 @@ const ProductosPage = () => {
                         <div>
                           <p className="font-medium">{producto.nombre}</p>
                           <p className="text-sm text-muted-foreground line-clamp-1">
-                            {producto.descripcion}
+                            {producto.description}
                           </p>
                         </div>
                       </div>
                     </td>
                     <td className="p-4">
-                      <span className={cn(
-                        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
-                        producto.tipoPropietario === "negocio" 
-                          ? "bg-blue-500/10 text-blue-400" 
-                          : "bg-purple-500/10 text-purple-400"
-                      )}>
-                        {producto.tipoPropietario === "negocio" ? (
-                          <><Store className="w-3 h-3" /> Negocio</>
-                        ) : (
-                          <><ShoppingCart className="w-3 h-3" /> Tienda</>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs font-medium",
+                          producto.providerType
+                            ? "bg-blue-500/10 text-blue-400"
+                            : "bg-purple-500/10 text-purple-400",
                         )}
+                      >
+                        {providerLabels[producto.providerType]}
                       </span>
                     </td>
                     <td className="p-4">
                       <span className="text-sm text-muted-foreground">
-                        {producto.propietarioNombre}
+                        {providerCategoryLabels[producto.providerCategory]}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -342,7 +478,7 @@ const ProductosPage = () => {
                     </td>
                     <td className="p-4 text-right">
                       <span className="font-display font-semibold number-display">
-                        ${producto.price.toLocaleString()}
+                        ${producto.saleprice.toLocaleString()}
                       </span>
                     </td>
                     <td className="p-4 text-right">
@@ -350,16 +486,18 @@ const ProductosPage = () => {
                         {margenBajo && (
                           <AlertCircle className="w-4 h-4 text-emphasis" />
                         )}
-                        <span className={cn(
-                          "font-mono text-sm font-medium",
-                          margenBajo ? "text-emphasis" : "text-success"
-                        )}>
+                        <span
+                          className={cn(
+                            "font-mono text-sm font-medium",
+                            margenBajo ? "text-emphasis" : "text-success",
+                          )}
+                        >
                           {margen}%
                         </span>
                       </div>
                     </td>
                     <td className="p-4 text-center">
-                      <StatusBadge status={producto.estado} />
+                      <StatusBadge status={producto.status} />
                     </td>
                     <td className="p-4 text-right">
                       <DropdownMenu>
@@ -369,13 +507,17 @@ const ProductosPage = () => {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleOpenDialog(producto)}>
+                          <DropdownMenuItem
+                            onClick={() => handleOpenDialog(producto)}
+                          >
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleToggleEstado(producto.id)}>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleEstado(producto)}
+                          >
                             <Power className="w-4 h-4 mr-2" />
-                            {producto.estado === "active" ? "Desactivar" : "Activar"}
+                            {producto.status ? "Desactivar" : "Activar"}
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
@@ -395,22 +537,20 @@ const ProductosPage = () => {
           </table>
         </div>
       </div>
-
       {filteredProductos.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           No se encontraron productos
         </div>
       )}
-
       {/* Margin Warning */}
       <div className="p-4 rounded-xl bg-emphasis/5 border border-emphasis/20 flex items-center gap-3">
         <AlertCircle className="w-5 h-5 text-emphasis shrink-0" />
         <p className="text-sm text-muted-foreground">
-          <span className="text-emphasis font-medium">Nota:</span> Los productos con margen menor al 30% están marcados con advertencia visual. 
-          El cálculo de precios finales se realizará en el backend.
+          <span className="text-emphasis font-medium">Nota:</span> Los productos
+          con margen menor al 30% están marcados con advertencia visual. El
+          cálculo de precios finales se realizará en el backend.
         </p>
       </div>
-
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
@@ -421,8 +561,7 @@ const ProductosPage = () => {
             <DialogDescription>
               {editingProducto
                 ? "Modifica la información del producto"
-                : "Completa la información para agregar un nuevo producto"
-              }
+                : "Completa la información para agregar un nuevo producto"}
             </DialogDescription>
           </DialogHeader>
 
@@ -431,46 +570,123 @@ const ProductosPage = () => {
             <div className="grid gap-2">
               <Label>Asignar producto a</Label>
               <Select
-                value={formData.tipoPropietario}
-                onValueChange={(v) => setFormData({ ...formData, tipoPropietario: v as TipoPropietario, propietarioId: "" })}
+                value={formData.providerType}
+                onValueChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    providerType: v as ProviderType,
+                    providerId: "",
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="negocio">
+                  <SelectItem value="BUSINESS">
                     <span className="flex items-center gap-2">
-                      <Store className="w-4 h-4" /> Negocio
+                      <Store className="w-4 h-4" /> Negocios
                     </span>
                   </SelectItem>
-                  <SelectItem value="tienda">
+                  <SelectItem value="STORE">
                     <span className="flex items-center gap-2">
-                      <ShoppingCart className="w-4 h-4" /> Tienda
+                      <ShoppingCart className="w-4 h-4" /> Tiendas
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="SERVICE">
+                    <span className="flex items-center gap-2">
+                      <ShoppingCart className="w-4 h-4" /> Servicios
                     </span>
                   </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            {/* Selección de Propietario */}
+            {/* Selección de Categoría del Negocio */}
             <div className="grid gap-2">
-              <Label>{formData.tipoPropietario === "negocio" ? "Negocio" : "Tienda"}</Label>
+              <Label>Categoría</Label>
+
               <Select
-                value={formData.propietarioId}
-                onValueChange={(v) => setFormData({ ...formData, propietarioId: v })}
+                value={formData.providerCategory}
+                onValueChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    providerCategory: v as ProviderCategory,
+                    providerId: "", // reset seguro
+                  })
+                }
               >
                 <SelectTrigger>
-                  <SelectValue placeholder={`Selecciona ${formData.tipoPropietario === "negocio" ? "un negocio" : "una tienda"}`} />
+                  <SelectValue placeholder="Selecciona una categoría" />
                 </SelectTrigger>
+
                 <SelectContent>
-                  {formData.tipoPropietario === "negocio" 
-                    ? mockNegocios.map(n => (
-                        <SelectItem key={n.id} value={n.id}>{n.nombre}</SelectItem>
-                      ))
-                    : mockTiendas.map(t => (
-                        <SelectItem key={t.id} value={t.id}>{t.nombre}</SelectItem>
-                      ))
+                  <SelectItem value="RESTAURANT">Restaurante</SelectItem>
+                  <SelectItem value="STORE">Tienda</SelectItem>
+                  <SelectItem value="LICORERA">Licorera</SelectItem>
+                  <SelectItem value="MEDICAMENT_STORE">Farmacia</SelectItem>
+                  <SelectItem value="SERVICE">Servicios</SelectItem>
+                  <SelectItem value="OTHER">Otros</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Selección de Negocio */}
+            {formData.providerCategory && (
+              <div className="grid gap-2">
+                <Label>Negocio</Label>
+
+                <Select
+                  value={formData.providerId}
+                  onValueChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      providerId: v,
+                    })
                   }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecciona un negocio" />
+                  </SelectTrigger>
+
+                  <SelectContent>
+                    {negocios
+                      .filter((n) => n.category === formData.providerCategory)
+                      .map((n) => (
+                        <SelectItem key={n.id} value={String(n.id)}>
+                          {n.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Selección de Categoría Producto */}
+            <div className="grid gap-2">
+              <Label>Categoría</Label>
+
+              <Select
+                value={formData.category}
+                onValueChange={(v) =>
+                  setFormData({
+                    ...formData,
+                    category: v as ProductCategory,
+                    providerId: undefined, // reset si cambia categoría
+                  })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona una categoría" />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="FOOD">Comida</SelectItem>
+                  <SelectItem value="DRINK">Bebidas</SelectItem>
+                  <SelectItem value="ALCOHOL">Alcohol</SelectItem>
+                  <SelectItem value="MEDICINE">Medicamentos</SelectItem>
+                  <SelectItem value="GROCERY">Abarrotes</SelectItem>
+                  <SelectItem value="OTHER">Otros</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -480,7 +696,9 @@ const ProductosPage = () => {
               <Input
                 id="nombre"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: e.target.value })
+                }
                 placeholder="Ej: Hamburguesa Clásica"
               />
             </div>
@@ -490,7 +708,9 @@ const ProductosPage = () => {
               <Textarea
                 id="descripcion"
                 value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, descripcion: e.target.value })
+                }
                 placeholder="Descripción del producto"
                 rows={3}
               />
@@ -500,7 +720,9 @@ const ProductosPage = () => {
               <div className="grid gap-2">
                 <Label htmlFor="costPrice" className="flex items-center gap-2">
                   Costo
-                  <span className="text-xs text-muted-foreground font-normal">(interno)</span>
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (interno)
+                  </span>
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -508,7 +730,9 @@ const ProductosPage = () => {
                     id="costPrice"
                     type="number"
                     value={formData.costPrice}
-                    onChange={(e) => setFormData({ ...formData, costPrice: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, costPrice: e.target.value })
+                    }
                     placeholder="0"
                     className="pl-10"
                   />
@@ -518,7 +742,9 @@ const ProductosPage = () => {
               <div className="grid gap-2">
                 <Label htmlFor="price" className="flex items-center gap-2">
                   Precio
-                  <span className="text-xs text-muted-foreground font-normal">(cliente)</span>
+                  <span className="text-xs text-muted-foreground font-normal">
+                    (cliente)
+                  </span>
                 </Label>
                 <div className="relative">
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emphasis" />
@@ -526,7 +752,9 @@ const ProductosPage = () => {
                     id="price"
                     type="number"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
                     placeholder="0"
                     className="pl-10 border-emphasis/30 focus:border-emphasis"
                   />
@@ -535,20 +763,29 @@ const ProductosPage = () => {
             </div>
 
             {/* Visual margin indicator */}
-          {formData.costPrice && formData.price && (
+            {formData.costPrice && formData.price && (
               <div className="p-3 rounded-lg bg-muted/50 flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Margen estimado:</span>
-                <span className={cn(
-                  "font-display font-semibold",
-                  parseFloat(calcularMargen(
-                    parseFloat(formData.costPrice || "0"),
-                    parseFloat(formData.price || "0")
-                  ) || "0") < 30 ? "text-emphasis" : "text-success"
-                )}>
+                <span className="text-sm text-muted-foreground">
+                  Margen estimado:
+                </span>
+                <span
+                  className={cn(
+                    "font-display font-semibold",
+                    parseFloat(
+                      calcularMargen(
+                        parseFloat(formData.costPrice || "0"),
+                        parseFloat(formData.price || "0"),
+                      ) || "0",
+                    ) < 30
+                      ? "text-emphasis"
+                      : "text-success",
+                  )}
+                >
                   {calcularMargen(
                     parseFloat(formData.costPrice) || 0,
-                    parseFloat(formData.price) || 0
-                  )}%
+                    parseFloat(formData.price) || 0,
+                  )}
+                  %
                 </span>
               </div>
             )}

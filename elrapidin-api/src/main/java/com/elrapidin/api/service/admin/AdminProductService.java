@@ -32,6 +32,7 @@ public class AdminProductService {
         // ✅ PROVIDER REAL
         product.setProviderType(request.getProviderType());
         product.setProviderId(request.getProviderId());
+        product.setProviderCategory(request.getProviderCategory());
         product.setCategory(request.getCategory());
         product.setName(request.getName());
         product.setDescription(request.getDescription());
@@ -113,9 +114,6 @@ public class AdminProductService {
                     // ✅ DIRECTO DESDE EL ENTITY
                     dto.setProviderType(product.getProviderType());
                     dto.setProviderId(product.getProviderId());
-
-                    // ⏳ se resolverá en el siguiente paso
-                    dto.setProviderName(product.getName());
 
                     dto.setCategory(product.getCategory());
                     dto.setCostPrice(product.getCostPrice());
