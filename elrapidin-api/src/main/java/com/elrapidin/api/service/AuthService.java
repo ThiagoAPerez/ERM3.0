@@ -73,7 +73,7 @@ public class AuthService {
     // =====================================================
     public String login(LoginRequest request) {
 
-        String identifier = request.getPhone(); // puede ser phone o email
+        String identifier = request.getIdentifier(); // puede ser phone o email
 
         UserEntity user = userRepository
                 .findByPhone(identifier)

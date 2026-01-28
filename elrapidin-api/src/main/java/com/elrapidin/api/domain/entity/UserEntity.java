@@ -36,8 +36,6 @@ public class UserEntity {
     @Column(nullable = false, length = 20)
     private UserStatus status;
 
-    private Long createdBy;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -64,6 +62,14 @@ public class UserEntity {
 
     public Long getId() {
         return id;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public void setUpdatedAt(LocalDateTime updatedAt) {
+        this.updatedAt = updatedAt;
     }
 
     public void setId(Long id) {
@@ -118,14 +124,7 @@ public class UserEntity {
         this.status = status;
     }
 
-    public Long getCreatedBy() {
-        return createdBy;
-    }
-
-    public void setCreatedBy(Long createdBy) {
-        this.createdBy = createdBy;
-    }
-
+ 
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -134,11 +133,4 @@ public class UserEntity {
         return updatedAt;
     }
 
-    public DeliveryProfileEntity getDeliveryProfile() {
-        return deliveryProfile;
-    }
-
-    public void setDeliveryProfile(DeliveryProfileEntity deliveryProfile) {
-        this.deliveryProfile = deliveryProfile;
-    }
 }

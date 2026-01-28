@@ -10,4 +10,3 @@ public class ElrapidinApiApplication {
 		SpringApplication.run(ElrapidinApiApplication.class, args);
 	}
 }
- 
