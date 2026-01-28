@@ -9,21 +9,21 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateDeliveryRequest(
 
-                @NotBlank String name,
+        @NotBlank String name,
 
-                @NotBlank String phone,
+        @NotBlank String phone,
 
-                @NotBlank String email,
+        @NotBlank String email,
 
-                @NotBlank String temporaryPassword,
+        @NotBlank String temporaryPassword,
 
-                @NotNull VehicleType vehicleType,
+        @NotNull VehicleType vehicleType,
 
-                String vehiclePlate,
+        String vehiclePlate,
 
-                @NotNull ServiceType serviceType,
+        @NotNull ServiceType serviceType,
 
-                DeliveryZone zone
+        DeliveryZone zone
 
 ) {
 }

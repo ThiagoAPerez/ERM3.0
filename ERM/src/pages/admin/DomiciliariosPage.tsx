@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { 
-  Truck, 
-  Plus, 
-  Search, 
+import {
+  Truck,
+  Plus,
+  Search,
   Filter,
   MoreVertical,
   Edit,
@@ -12,7 +12,7 @@ import {
   Phone,
   User,
   Bike,
-  Package
+  Package,
 } from "lucide-react";
 import PageHeader from "@/components/admin/PageHeader";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -42,10 +42,29 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { api } from "@/lib/api";
 
-type TipoServicio = "mensajeria" | "motocarguero" | "ambos";
-type EstadoDomiciliario = "libre" | "ocupado" | "inactivo";
-type TipoVehiculo = "moto" | "carro" | "bicicleta";
+/* =====================  TYPES  ===================== */
+//==========================================================
+
+type VehicleType = "MOTORBIKE" | "BICYCLE" | "CAR" | "MOTOCARGO";
+
+type ServiceType =
+  | "MOTOCARGUERO"
+  | "PARTICULAR"
+  | "DOMICILIARIO"
+  | "MENSAJERIA";
+
+type DeliveryZone = "MARINILLA" | "RIONEGRO" | "EL_CAARMEN" | "NOASIGNADO";
+type DeliveryStatus =
+  | "OFFLINE"
+  | "AVAILABLE"
+  | "BUSY"
+  | "SUSPENDED"
+  | "DELETED";
+
+/* =====================  INTERFACES  ===================== */
+//==========================================================
 
 interface Domiciliario {
   id: string;
@@ -54,124 +73,154 @@ interface Domiciliario {
   email: string;
   password?: string;
   placa: string;
-  tipoVehiculo: TipoVehiculo;
-  tipoServicio: TipoServicio;
-  estado: EstadoDomiciliario;
+  tipoVehiculo: VehicleType;
+  tipoServicio: ServiceType;
+  estado: DeliveryStatus;
   pedidosActivos: number;
   pedidosHoy: number;
-  zona?: string;
+  zona?: DeliveryZone;
 }
 
-// Mock data - preparado para integración backend
-const mockDomiciliarios: Domiciliario[] = [
-  {
-    id: "1",
-    nombre: "Carlos Pérez",
-    telefono: "3001234567",
-    email: "carlos.perez@email.com",
-    placa: "ABC123",
-    tipoVehiculo: "moto",
-    tipoServicio: "mensajeria",
-    estado: "libre",
-    pedidosActivos: 0,
-    pedidosHoy: 8,
-    zona: "Centro",
-  },
-  {
-    id: "2",
-    nombre: "Juan García",
-    telefono: "3009876543",
-    email: "juan.garcia@email.com",
-    placa: "DEF456",
-    tipoVehiculo: "moto",
-    tipoServicio: "motocarguero",
-    estado: "ocupado",
-    pedidosActivos: 2,
-    pedidosHoy: 5,
-    zona: "Norte",
-  },
-  {
-    id: "3",
-    nombre: "María López",
-    telefono: "3005551234",
-    email: "maria.lopez@email.com",
-    placa: "GHI789",
-    tipoVehiculo: "carro",
-    tipoServicio: "ambos",
-    estado: "ocupado",
-    pedidosActivos: 1,
-    pedidosHoy: 12,
-    zona: "Centro",
-  },
-  {
-    id: "4",
-    nombre: "Andrés Martínez",
-    telefono: "3007778899",
-    email: "andres.martinez@email.com",
-    placa: "JKL012",
-    tipoVehiculo: "bicicleta",
-    tipoServicio: "mensajeria",
-    estado: "inactivo",
-    pedidosActivos: 0,
-    pedidosHoy: 0,
-    zona: "Sur",
-  },
-];
+/* =====================  ICON / LABELS  ===================== */
+//==========================================================
 
-const tipoVehiculoLabels: Record<TipoVehiculo, string> = {
-  moto: "Motocicleta",
-  carro: "Carro",
-  bicicleta: "Bicicleta",
+const tipoVehiculoLabels: Record<VehicleType, string> = {
+  MOTORBIKE: "Motocicleta",
+  CAR: "Carro",
+  BICYCLE: "Bicicleta",
+  MOTOCARGO: "Motocargo",
 };
 
-const tipoServicioLabels: Record<TipoServicio, string> = {
-  mensajeria: "Mensajería",
-  motocarguero: "Motocarguero",
-  ambos: "Ambos",
+const tipoServicioLabels: Record<ServiceType, string> = {
+  MENSAJERIA: "Mensajería",
+  MOTOCARGUERO: "Motocarguero",
+  PARTICULAR: "Particular",
+  DOMICILIARIO: "Domiciliario",
 };
 
-const tipoServicioIcons: Record<TipoServicio, React.ElementType> = {
-  mensajeria: Bike,
-  motocarguero: Truck,
-  ambos: Package,
+const tipoServicioIcons: Record<ServiceType, React.ElementType> = {
+  MENSAJERIA: Bike,
+  MOTOCARGUERO: Truck,
+  PARTICULAR: User,
+  DOMICILIARIO: Package,
 };
 
-const estadoConfig: Record<EstadoDomiciliario, { label: string; color: string }> = {
-  libre: { label: "Libre", color: "bg-success/10 text-success" },
-  ocupado: { label: "Ocupado", color: "bg-accent/10 text-accent" },
-  inactivo: { label: "Inactivo", color: "bg-muted text-muted-foreground" },
+/* =====================  DELIVERY STATUS  ===================== */
+//==========================================================
+
+const estadoConfig: Record<DeliveryStatus, { label: string; color: string }> = {
+  AVAILABLE: {
+    label: "Disponible",
+    color: "bg-success/10 text-success",
+  },
+  BUSY: {
+    label: "Ocupado",
+    color: "bg-accent/10 text-accent",
+  },
+  OFFLINE: {
+    label: "Offline",
+    color: "bg-muted text-muted-foreground",
+  },
+  SUSPENDED: {
+    label: "Suspendido",
+    color: "bg-destructive/10 text-destructive",
+  },
+  DELETED: {
+    label: "Eliminado",
+    color: "bg-muted text-muted-foreground",
+  },
 };
+
+/* =====================  DOMICILIARIOS PAGE  ===================== */
+//================================================================
 
 const DomiciliariosPage = () => {
-  const [domiciliarios, setDomiciliarios] = useState<Domiciliario[]>(mockDomiciliarios);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterEstado, setFilterEstado] = useState<EstadoDomiciliario | "all">("all");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingDomiciliario, setEditingDomiciliario] = useState<Domiciliario | null>(null);
+  const [domiciliarios, setDomiciliarios] = useState<Domiciliario[]>([]);
 
-  const [formData, setFormData] = useState({
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const [filterEstado, setFilterEstado] = useState<DeliveryStatus | "all">(
+    "all",
+  );
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const [editingDomiciliario, setEditingDomiciliario] =
+    useState<Domiciliario | null>(null);
+
+  // =============================================
+  //==================== FORMADATA ===============
+
+  const [formData, setFormData] = useState<{
+    nombre: string;
+    telefono: string;
+    email: string;
+    password: string;
+    placa: string;
+    tipoVehiculo: VehicleType;
+    tipoServicio: ServiceType;
+    zona: DeliveryZone | "";
+  }>({
     nombre: "",
     telefono: "",
     email: "",
     password: "",
     placa: "",
-    tipoVehiculo: "moto" as TipoVehiculo,
-    tipoServicio: "mensajeria" as TipoServicio,
+    tipoVehiculo: "MOTORBIKE",
+    tipoServicio: "MENSAJERIA",
     zona: "",
   });
 
+  /* =====================  FILTRAR DOMICILIARIO ESTADOS  ===================== */
+  //===========================================================================
+
   const filteredDomiciliarios = domiciliarios.filter((d) => {
-    const matchesSearch = d.nombre.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = d.nombre
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+
     const matchesEstado = filterEstado === "all" || d.estado === filterEstado;
+
     return matchesSearch && matchesEstado;
   });
 
   const stats = {
     total: domiciliarios.length,
-    libres: domiciliarios.filter(d => d.estado === "libre").length,
-    ocupados: domiciliarios.filter(d => d.estado === "ocupado").length,
-    inactivos: domiciliarios.filter(d => d.estado === "inactivo").length,
+    disponibles: domiciliarios.filter((d) => d.estado === "AVAILABLE").length,
+    ocupados: domiciliarios.filter((d) => d.estado === "BUSY").length,
+    offline: domiciliarios.filter((d) => d.estado === "OFFLINE").length,
+    suspendidos: domiciliarios.filter((d) => d.estado === "SUSPENDED").length,
   };
+
+  //============================================================
+  // ===================   MAPEARLO =============================
+
+  const loadDomiciliarios = async () => {
+    const res = await api.get("/admin/delivery");
+
+    const mapped: Domiciliario[] = res.data.data.map((d: any) => ({
+      id: String(d.id),
+      nombre: d.nombre,
+      telefono: d.telefono,
+      email: d.email,
+      placa: d.placa,
+      tipoVehiculo: d.tipoVehiculo,
+      tipoServicio: d.tipoServicio,
+      estado: d.estado,
+      pedidosActivos: d.pedidosActivos,
+      pedidosHoy: d.pedidosHoy,
+      zona: d.zona,
+    }));
+
+    setDomiciliarios(mapped);
+  };
+
+  useEffect(() => {
+    loadDomiciliarios();
+  }, []);
+
+  /* =====================  FILTRAR DOMICILIARIO ESTADOS  ===================== */
+  //===========================================================================
 
   const handleOpenDialog = (domiciliario?: Domiciliario) => {
     if (domiciliario) {
@@ -194,45 +243,81 @@ const DomiciliariosPage = () => {
         email: "",
         password: "",
         placa: "",
-        tipoVehiculo: "moto",
-        tipoServicio: "mensajeria",
+        tipoVehiculo: "MOTORBIKE",
+        tipoServicio: "MENSAJERIA",
         zona: "",
       });
     }
     setIsDialogOpen(true);
   };
 
-  const handleSave = () => {
-    if (editingDomiciliario) {
-      setDomiciliarios(domiciliarios.map(d =>
-        d.id === editingDomiciliario.id
-          ? { ...d, ...formData }
-          : d
-      ));
-    } else {
-      const newDomiciliario: Domiciliario = {
-        id: Date.now().toString(),
-        ...formData,
-        estado: "inactivo",
-        pedidosActivos: 0,
-        pedidosHoy: 0,
-      };
-      setDomiciliarios([...domiciliarios, newDomiciliario]);
+  /* =====================  FILTRAR DOMICILIARIO ESTADOS  ===================== */
+  //===========================================================================
+
+  const handleSave = async () => {
+    try {
+      // ⛔ regla: password obligatorio SOLO al crear
+      if (!editingDomiciliario && !formData.password.trim()) {
+        console.error("Password is required for new delivery");
+        return;
+      }
+
+      if (editingDomiciliario) {
+        await api.put(`/admin/delivery/${editingDomiciliario.id}`, {
+          vehicleType: formData.tipoVehiculo,
+          vehiclePlate: formData.placa,
+          serviceType: formData.tipoServicio,
+          zone: formData.zona || null,
+        });
+      } else {
+        await api.post("/admin/delivery", {
+          name: formData.nombre,
+          phone: formData.telefono,
+          email: formData.email,
+          temporaryPassword: formData.password, // ✔️ nunca ""
+          vehicleType: formData.tipoVehiculo,
+          vehiclePlate: formData.placa,
+          serviceType: formData.tipoServicio,
+          zone: formData.zona || null,
+        });
+      }
+
+      await loadDomiciliarios();
+      setIsDialogOpen(false);
+      setEditingDomiciliario(null);
+    } catch (err) {
+      console.error("ERROR SAVE DELIVERY", err);
     }
-    setIsDialogOpen(false);
   };
 
-  const handleToggleEstado = (id: string) => {
-    setDomiciliarios(domiciliarios.map(d =>
-      d.id === id
-        ? { ...d, estado: d.estado === "inactivo" ? "libre" : "inactivo" }
-        : d
-    ));
+  /* =====================  FILTRAR DOMICILIARIO ESTADOS  ===================== */
+  //===========================================================================
+
+  const handleToggleEstado = async (d: Domiciliario) => {
+    try {
+      if (d.estado === "SUSPENDED") {
+        await api.patch(`/admin/delivery/${d.id}/activate`);
+      } else {
+        await api.patch(`/admin/delivery/${d.id}/suspend`);
+      }
+
+      await loadDomiciliarios();
+    } catch (err) {
+      console.error("ERROR TOGGLE DELIVERY STATUS", err);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setDomiciliarios(domiciliarios.filter(d => d.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await api.patch(`/admin/delivery/${id}/delete`);
+      await loadDomiciliarios();
+    } catch (err) {
+      console.error("ERROR DELETE DELIVERY", err);
+    }
   };
+
+  /* =====================  UI  ===================== */
+  //===========================================================================
 
   return (
     <div className="space-y-6">
@@ -256,7 +341,9 @@ const DomiciliariosPage = () => {
           className="p-4 rounded-xl bg-card border border-border"
         >
           <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-2xl font-display font-bold number-display">{stats.total}</p>
+          <p className="text-2xl font-display font-bold number-display">
+            {stats.total}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -265,7 +352,9 @@ const DomiciliariosPage = () => {
           className="p-4 rounded-xl bg-success/5 border border-success/20"
         >
           <p className="text-sm text-success">Libres</p>
-          <p className="text-2xl font-display font-bold number-display text-success">{stats.libres}</p>
+          <p className="text-2xl font-display font-bold number-display text-success">
+            {stats.disponibles}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -274,7 +363,9 @@ const DomiciliariosPage = () => {
           className="p-4 rounded-xl bg-accent/5 border border-accent/20"
         >
           <p className="text-sm text-accent">Ocupados</p>
-          <p className="text-2xl font-display font-bold number-display text-accent">{stats.ocupados}</p>
+          <p className="text-2xl font-display font-bold number-display text-accent">
+            {stats.ocupados}
+          </p>
         </motion.div>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -283,7 +374,9 @@ const DomiciliariosPage = () => {
           className="p-4 rounded-xl bg-muted border border-border"
         >
           <p className="text-sm text-muted-foreground">Inactivos</p>
-          <p className="text-2xl font-display font-bold number-display">{stats.inactivos}</p>
+          <p className="text-2xl font-display font-bold number-display">
+            {stats.offline}
+          </p>
         </motion.div>
       </div>
 
@@ -298,16 +391,19 @@ const DomiciliariosPage = () => {
             className="pl-10"
           />
         </div>
-        <Select value={filterEstado} onValueChange={(v) => setFilterEstado(v as EstadoDomiciliario | "all")}>
+        <Select
+          value={filterEstado}
+          onValueChange={(v) => setFilterEstado(v as DeliveryStatus | "all")}
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filtrar por estado" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="libre">Libres</SelectItem>
-            <SelectItem value="ocupado">Ocupados</SelectItem>
-            <SelectItem value="inactivo">Inactivos</SelectItem>
+            <SelectItem value="AVAILABLE">Libres</SelectItem>
+            <SelectItem value="BUSY">Ocupados</SelectItem>
+            <SelectItem value="OFFLINE">Inactivos</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -325,29 +421,43 @@ const DomiciliariosPage = () => {
               transition={{ delay: index * 0.05 }}
               className={cn(
                 "bg-card border rounded-xl overflow-hidden transition-all",
-                domiciliario.estado === "ocupado" && "border-accent/30",
-                domiciliario.estado === "libre" && "border-success/30",
-                domiciliario.estado === "inactivo" && "border-border opacity-70"
+                domiciliario.estado === "BUSY" && "border-accent/30",
+                domiciliario.estado === "AVAILABLE" && "border-success/30",
+                domiciliario.estado === "OFFLINE" && "border-border opacity-70",
+                domiciliario.estado === "SUSPENDED" &&
+                  "border-destructive/30 opacity-70",
               )}
             >
               <div className="p-4">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "w-12 h-12 rounded-full flex items-center justify-center",
-                      domiciliario.estado === "libre" && "bg-success/10",
-                      domiciliario.estado === "ocupado" && "bg-accent/10",
-                      domiciliario.estado === "inactivo" && "bg-muted"
-                    )}>
-                      <User className={cn(
-                        "w-6 h-6",
-                        domiciliario.estado === "libre" && "text-success",
-                        domiciliario.estado === "ocupado" && "text-accent",
-                        domiciliario.estado === "inactivo" && "text-muted-foreground"
-                      )} />
+                    <div
+                      className={cn(
+                        "w-12 h-12 rounded-full flex items-center justify-center",
+                        domiciliario.estado === "AVAILABLE" && "bg-success/10",
+                        domiciliario.estado === "BUSY" && "bg-accent/10",
+                        domiciliario.estado === "OFFLINE" && "bg-muted",
+                        domiciliario.estado === "SUSPENDED" &&
+                          "bg-destructive/10",
+                      )}
+                    >
+                      <User
+                        className={cn(
+                          "w-6 h-6",
+                          domiciliario.estado === "AVAILABLE" && "text-success",
+                          domiciliario.estado === "BUSY" && "text-accent",
+                          domiciliario.estado === "OFFLINE" &&
+                            "text-muted-foreground",
+                          domiciliario.estado === "SUSPENDED" &&
+                            "text-destructive",
+                        )}
+                      />
                     </div>
+
                     <div>
-                      <h3 className="font-display font-semibold">{domiciliario.nombre}</h3>
+                      <h3 className="font-display font-semibold">
+                        {domiciliario.nombre}
+                      </h3>
                       <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
                         <Phone className="w-3 h-3" />
                         <span>{domiciliario.telefono}</span>
@@ -362,13 +472,19 @@ const DomiciliariosPage = () => {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleOpenDialog(domiciliario)}>
+                      <DropdownMenuItem
+                        onClick={() => handleOpenDialog(domiciliario)}
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Editar
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleToggleEstado(domiciliario.id)}>
+                      <DropdownMenuItem
+                        onClick={() => handleToggleEstado(domiciliario)}
+                      >
                         <Power className="w-4 h-4 mr-2" />
-                        {domiciliario.estado === "inactivo" ? "Activar" : "Desactivar"}
+                        {domiciliario.estado === "OFFLINE"
+                          ? "Activar"
+                          : "Desactivar"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -386,7 +502,9 @@ const DomiciliariosPage = () => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TipoIcon className="w-4 h-4 text-emphasis" />
-                      <span className="text-sm">{tipoServicioLabels[domiciliario.tipoServicio]}</span>
+                      <span className="text-sm">
+                        {tipoServicioLabels[domiciliario.tipoServicio]}
+                      </span>
                     </div>
                     {domiciliario.zona && (
                       <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
@@ -410,10 +528,12 @@ const DomiciliariosPage = () => {
                         </p>
                       </div>
                     </div>
-                    <span className={cn(
-                      "px-2.5 py-1 rounded-full text-xs font-medium",
-                      estadoConfig[domiciliario.estado].color
-                    )}>
+                    <span
+                      className={cn(
+                        "px-2.5 py-1 rounded-full text-xs font-medium",
+                        estadoConfig[domiciliario.estado].color,
+                      )}
+                    >
                       {estadoConfig[domiciliario.estado].label}
                     </span>
                   </div>
@@ -421,9 +541,10 @@ const DomiciliariosPage = () => {
               </div>
 
               {/* Active indicator */}
-              {domiciliario.estado === "ocupado" && domiciliario.pedidosActivos > 0 && (
-                <div className="h-1 bg-gradient-to-r from-accent to-emphasis animate-pulse" />
-              )}
+              {domiciliario.estado === "BUSY" &&
+                domiciliario.pedidosActivos > 0 && (
+                  <div className="h-1 bg-gradient-to-r from-accent to-emphasis animate-pulse" />
+                )}
             </motion.div>
           );
         })}
@@ -440,13 +561,14 @@ const DomiciliariosPage = () => {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>
-              {editingDomiciliario ? "Editar Domiciliario" : "Nuevo Domiciliario"}
+              {editingDomiciliario
+                ? "Editar Domiciliario"
+                : "Nuevo Domiciliario"}
             </DialogTitle>
             <DialogDescription>
               {editingDomiciliario
                 ? "Modifica la información del domiciliario"
-                : "Registra un nuevo domiciliario en el sistema"
-              }
+                : "Registra un nuevo domiciliario en el sistema"}
             </DialogDescription>
           </DialogHeader>
 
@@ -456,7 +578,9 @@ const DomiciliariosPage = () => {
               <Input
                 id="nombre"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: e.target.value })
+                }
                 placeholder="Nombre del domiciliario"
               />
             </div>
@@ -467,7 +591,9 @@ const DomiciliariosPage = () => {
                 <Input
                   id="telefono"
                   value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono: e.target.value })
+                  }
                   placeholder="Número de contacto"
                 />
               </div>
@@ -477,7 +603,9 @@ const DomiciliariosPage = () => {
                   id="email"
                   type="email"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   placeholder="correo@ejemplo.com"
                 />
               </div>
@@ -489,11 +617,18 @@ const DomiciliariosPage = () => {
                 id="password"
                 type="password"
                 value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder={editingDomiciliario ? "Dejar vacío para no cambiar" : "Contraseña inicial"}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder={
+                  editingDomiciliario
+                    ? "Dejar vacío para no cambiar"
+                    : "Contraseña inicial"
+                }
               />
               <p className="text-xs text-muted-foreground">
-                El domiciliario podrá cambiar esta contraseña en su primer acceso
+                El domiciliario podrá cambiar esta contraseña en su primer
+                acceso
               </p>
             </div>
 
@@ -503,8 +638,13 @@ const DomiciliariosPage = () => {
                 <Input
                   id="placa"
                   value={formData.placa}
-                  onChange={(e) => setFormData({ ...formData, placa: e.target.value.toUpperCase() })}
-                  placeholder="ABC123"
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      placa: e.target.value.toUpperCase(),
+                    })
+                  }
+                  placeholder="ABC12E"
                   className="uppercase"
                 />
               </div>
@@ -512,15 +652,21 @@ const DomiciliariosPage = () => {
                 <Label htmlFor="tipoVehiculo">Tipo de Vehículo</Label>
                 <Select
                   value={formData.tipoVehiculo}
-                  onValueChange={(v) => setFormData({ ...formData, tipoVehiculo: v as TipoVehiculo })}
+                  onValueChange={(v) =>
+                    setFormData({
+                      ...formData,
+                      tipoVehiculo: v as VehicleType,
+                    })
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="moto">Motocicleta</SelectItem>
-                    <SelectItem value="carro">Carro</SelectItem>
-                    <SelectItem value="bicicleta">Bicicleta</SelectItem>
+                    <SelectItem value="MOTORBIKE">Motocicleta</SelectItem>
+                    <SelectItem value="CAR">Carro</SelectItem>
+                    <SelectItem value="BICYCLE">Bicicleta</SelectItem>
+                    <SelectItem value="MOTOCARGO">Motocarguero</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -530,15 +676,18 @@ const DomiciliariosPage = () => {
               <Label htmlFor="tipoServicio">Tipo de Servicio</Label>
               <Select
                 value={formData.tipoServicio}
-                onValueChange={(v) => setFormData({ ...formData, tipoServicio: v as TipoServicio })}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, tipoServicio: v as ServiceType })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="mensajeria">Mensajería</SelectItem>
-                  <SelectItem value="motocarguero">Motocarguero</SelectItem>
-                  <SelectItem value="ambos">Ambos</SelectItem>
+                  <SelectItem value="DOMICILIARIO">Domiciliario</SelectItem>
+                  <SelectItem value="MENSAJERIA">Mensajeria</SelectItem>
+                  <SelectItem value="MOTOCARGUERO">Motocarguero</SelectItem>
+                  <SelectItem value="PARTICULAR">Particular</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -547,20 +696,20 @@ const DomiciliariosPage = () => {
               <Label htmlFor="zona">Zona de Cobertura</Label>
               <Select
                 value={formData.zona}
-                onValueChange={(v) => setFormData({ ...formData, zona: v })}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, zona: v as DeliveryZone })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una zona" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Marinilla">Marinilla</SelectItem>
-                  <SelectItem value="Rionegro">Rionegro</SelectItem>
-                  <SelectItem value="El Santuario">El Santuario</SelectItem>
-                  <SelectItem value="Guarne">Guarne</SelectItem>
-                  <SelectItem value="La Ceja">La Ceja</SelectItem>
-                  <SelectItem value="El Retiro">El Retiro</SelectItem>
-                  <SelectItem value="El Carmen de Viboral">El Carmen de Viboral</SelectItem>
-                  <SelectItem value="San Vicente">San Vicente</SelectItem>
+                  <SelectItem value="MARINILLA">Marinilla</SelectItem>
+                  <SelectItem value="RIONEGRO">Rionegro</SelectItem>
+                  <SelectItem value="EL_CAARMEN">
+                    El Carmen de Viboral
+                  </SelectItem>
+                  <SelectItem value="NOASIGNADO">NOASIGNADO</SelectItem>
                 </SelectContent>
               </Select>
             </div>
