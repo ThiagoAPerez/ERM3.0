@@ -1,43 +1,36 @@
 import { api } from "@/lib/api";
 
 export interface LoginRequest {
-  phone: string;
-  email: string;
+  identifier: string;
   password: string;
 }
 
-interface RegisterRequest {
+export interface RegisterRequest {
   name: string;
   phone: string;
   email: string;
   password: string;
 }
 
-interface AuthResponse {
+export interface AuthResponse {
   token: string;
 }
 
-export async function login(data: LoginRequest) {
-  const res = await api.post("/auth/login", data);
-  return res.data; // { token }
-}
-
-export async function register(data: RegisterRequest) {
-  const res = await api.post("/auth/register", data);
-  return res.data; // { token }
-}
-
 export const authService = {
-  async register(data: RegisterRequest): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>("/auth/register", data);
+  async login(data: LoginRequest): Promise<AuthResponse> {
+    const res = await api.post<AuthResponse>("/auth/login", {
+      identifier: data.identifier,
+      password: data.password,
+    });
+
+    localStorage.setItem("token", res.data.token);
     return res.data;
   },
 
-  async login(data: {
-    phone: string;
-    password: string;
-  }): Promise<AuthResponse> {
-    const res = await api.post<AuthResponse>("/auth/login", data);
+  async register(data: RegisterRequest): Promise<AuthResponse> {
+    const res = await api.post<AuthResponse>("/auth/register", data);
+
+    localStorage.setItem("token", res.data.token);
     return res.data;
   },
 };

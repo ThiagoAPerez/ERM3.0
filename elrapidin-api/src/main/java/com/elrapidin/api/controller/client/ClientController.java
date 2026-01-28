@@ -3,6 +3,7 @@ package com.elrapidin.api.controller.client;
 import com.elrapidin.api.dto.client.ChangePasswordRequest;
 import com.elrapidin.api.dto.client.ClientMeResponse;
 import com.elrapidin.api.dto.client.UpdateClientProfileRequest;
+import com.elrapidin.api.security.AuthenticatedUser;
 import com.elrapidin.api.service.client.ClientService;
 
 import jakarta.validation.Valid;
@@ -26,8 +27,10 @@ public class ClientController {
 
     @GetMapping("/me")
     public ClientMeResponse me(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
-        return clientService.getClientMe(userId);
+
+        AuthenticatedUser authUser = (AuthenticatedUser) authentication.getPrincipal();
+
+        return clientService.getClientMe(authUser.getUserId());
     }
 
     // =====================================================
