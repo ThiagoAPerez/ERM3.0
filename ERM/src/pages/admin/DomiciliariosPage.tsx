@@ -55,7 +55,11 @@ type ServiceType =
   | "DOMICILIARIO"
   | "MENSAJERIA";
 
-type DeliveryZone = "MARINILLA" | "RIONEGRO" | "EL_CAARMEN" | "NOASIGNADO";
+export type DeliveryZone =
+  | "MARINILLA"
+  | "RIONEGRO"
+  | "EL_CAARMEN"
+  | "NOASIGNADO";
 type DeliveryStatus =
   | "OFFLINE"
   | "AVAILABLE"

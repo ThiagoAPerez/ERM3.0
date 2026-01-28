@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -12,39 +13,79 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
-import { login } from "@/services/authService";
+import { api } from "@/lib/api";
+import { authService } from "@/services/authService";
+
+/* ===================== TYPES ===================== */
+
+export interface ClientMeResponse {
+  user: {
+    id: number;
+    name: string;
+    phone: string;
+    email: string;
+    role: "CLIENT";
+    status: "ACTIVE" | "SUSPENDED";
+  };
+  clientProfile: {
+    name: string;
+    phone: string;
+    profilePhotoUrl: string | null;
+  };
+}
+
+/* ===================== COMPONENT ===================== */
 
 const LoginPage = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    email: "",
+    identifier: "",
     password: "",
   });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
 
   const handleLogin = async () => {
     try {
       setIsLoading(true);
 
-      const res = await login({
-        phone: formData.email, // ⚠️ backend espera phone
-        password: formData.password,
-        email: formData.email
-      });
+      // Login (guarda token)
+      await authService.login(formData);
 
-      localStorage.setItem("token", res.token);
+      // Obtener identidad REAL
+      const meRes = await api.get<ClientMeResponse>("/client/me");
+
+      // 🔒 SOLO CLIENT permitido aquí
+      if (meRes.data.user.role !== "CLIENT") {
+        localStorage.removeItem("token");
+
+        toast({
+          variant: "destructive",
+          title: "Acceso no permitido",
+          description: "Esta cuenta no es de tipo cliente",
+        });
+
+        return;
+      }
+
+      // ✅ CLIENT OK
+      navigate("/dashboard");
 
       toast({
         title: "Login exitoso",
         description: "Bienvenido",
       });
-
-      navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
       toast({
         variant: "destructive",
         title: "Error de autenticación",
@@ -53,14 +94,6 @@ const LoginPage = () => {
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
   };
 
   return (
@@ -95,6 +128,7 @@ const LoginPage = () => {
               Ingresa tus credenciales para acceder a tu cuenta
             </CardDescription>
           </CardHeader>
+
           <CardContent>
             <form
               onSubmit={(e) => {
@@ -103,42 +137,45 @@ const LoginPage = () => {
               }}
               className="space-y-4"
             >
-              {" "}
               <div className="space-y-2">
-                <Label htmlFor="email">Correo electrónico</Label>
+                <Label htmlFor="identifier">Correo electrónico o número</Label>
+
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
                   <Input
-                    id="email"
-                    type="email"
-                    placeholder="tu@email.com"
+                    id="identifier"
+                    name="identifier"
+                    type="text"
+                    placeholder="correo@ejemplo.com o 3001234567"
                     className="pl-10"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
+                    value={formData.identifier}
+                    onChange={handleChange}
                     required
                   />
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Contraseña</Label>
+
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+
                   <Input
                     id="password"
+                    name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     className="pl-10 pr-10"
                     value={formData.password}
-                    onChange={(e) =>
-                      setFormData({ ...formData, password: e.target.value })
-                    }
+                    onChange={handleChange}
                     required
                   />
+
                   <button
                     type="button"
-                    onClick={() => setShowPassword(!showPassword)}
+                    onClick={() => setShowPassword((prev) => !prev)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
@@ -149,11 +186,13 @@ const LoginPage = () => {
                   </button>
                 </div>
               </div>
+
               <div className="flex items-center justify-between text-sm">
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" className="rounded border-border" />
                   <span className="text-muted-foreground">Recordarme</span>
                 </label>
+
                 <Link
                   to="/forgot-password"
                   className="text-accent hover:underline"
@@ -161,6 +200,7 @@ const LoginPage = () => {
                   ¿Olvidaste tu contraseña?
                 </Link>
               </div>
+
               <Button
                 type="submit"
                 variant="hero"

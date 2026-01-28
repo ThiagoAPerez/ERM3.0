@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Menu, X, User, ShoppingBag, MapPin, LogOut, ChevronDown } from "lucide-react";
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Menu, X, User, ShoppingBag, MapPin, LogOut } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,23 +18,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { api } from "@/lib/api";
 
-const municipios = [
-  { value: "all", label: "Todas las ubicaciones" },
-  { value: "marinilla", label: "Marinilla" },
-  { value: "el-retiro", label: "El Retiro" },
-  { value: "la-ceja", label: "La Ceja" },
-  { value: "rionegro", label: "Rionegro" },
-  { value: "el-carmen", label: "El Carmen de Viboral" },
-  { value: "guarne", label: "Guarne" },
-  { value: "el-santuario", label: "El Santuario" },
-  { value: "san-vicente", label: "San Vicente" },
-];
+/* ===================== TYPES ===================== */
+
+export type DeliveryZone =
+  | "MARINILLA"
+  | "RIONEGRO"
+  | "EL_CARMEN"
+  | "NOASIGNADO";
+
+export interface ClientMeResponse {
+  user: {
+    id: number;
+    name: string;
+    phone: string;
+    email: string;
+    role: "CLIENT";
+    status: "ACTIVE" | "SUSPENDED";
+  };
+  clientProfile: {
+    name: string;
+    phone: string;
+    profilePhotoUrl: string | null;
+  };
+}
+
+/* ===================== COMPONENT ===================== */
 
 const UserHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedZone, setSelectedZone] = useState<DeliveryZone>("MARINILLA");
+
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { label: "Negocios", href: "/negocios" },
@@ -45,14 +62,48 @@ const UserHeader = () => {
 
   const isActive = (href: string) => location.pathname === href;
 
-  // Mock user data
-  const user = {
-    name: "Juan Pérez",
-    email: "juan@example.com",
-    avatar: null,
+  /* ===================== USER ===================== */
+
+  const [user, setUser] = useState<{
+    name: string;
+    email: string;
+    avatar: string | null;
+  } | null>(null);
+
+  /* ===================== DELIVERY ZONE LABELS ===================== */
+
+  const DELIVERY_ZONE_LABELS: Record<DeliveryZone, string> = {
+    MARINILLA: "Marinilla",
+    RIONEGRO: "Rionegro",
+    EL_CARMEN: "El Carmen de Viboral",
+    NOASIGNADO: "Proximamente",
   };
 
-  const selectedMunicipio = municipios.find(m => m.value === selectedLocation);
+  /* ===================== LOAD CLIENT ===================== */
+
+  useEffect(() => {
+    api
+      .get<ClientMeResponse>("/client/me")
+      .then((res) => {
+        setUser({
+          name: res.data.clientProfile.name,
+          email: res.data.user.email,
+          avatar: res.data.clientProfile.profilePhotoUrl,
+        });
+      })
+      .catch(() => {
+        setUser(null);
+      });
+  }, []);
+
+  /* ===================== LOGOUT ===================== */
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
+  /* ===================== RENDER ===================== */
 
   return (
     <motion.header
@@ -64,10 +115,7 @@ const UserHeader = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
+          <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
             <Link to="/dashboard" className="flex items-center gap-3 group">
               <div className="relative">
                 <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-emphasis flex items-center justify-center font-display font-bold text-emphasis-foreground text-lg">
@@ -88,17 +136,22 @@ const UserHeader = () => {
 
           {/* Location Selector - Desktop */}
           <div className="hidden lg:flex items-center">
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+            <Select
+              value={selectedZone}
+              onValueChange={(value) => setSelectedZone(value as DeliveryZone)}
+            >
               <SelectTrigger className="w-[200px] bg-muted/50 border-border/50 focus:ring-emphasis">
                 <MapPin className="w-4 h-4 mr-2 text-emphasis" />
                 <SelectValue placeholder="Ubicación" />
               </SelectTrigger>
               <SelectContent>
-                {municipios.map((municipio) => (
-                  <SelectItem key={municipio.value} value={municipio.value}>
-                    {municipio.label}
-                  </SelectItem>
-                ))}
+                {(Object.keys(DELIVERY_ZONE_LABELS) as DeliveryZone[]).map(
+                  (zone) => (
+                    <SelectItem key={zone} value={zone}>
+                      {DELIVERY_ZONE_LABELS[zone]}
+                    </SelectItem>
+                  ),
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -135,44 +188,43 @@ const UserHeader = () => {
               </Link>
             </Button>
 
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Avatar className="w-8 h-8">
-                    <AvatarImage src={user.avatar || undefined} />
-                    <AvatarFallback className="bg-accent/20 text-accent">
-                      {user.name.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2">
-                  <p className="text-sm font-medium">{user.name}</p>
-                  <p className="text-xs text-muted-foreground">{user.email}</p>
-                </div>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/perfil" className="cursor-pointer">
-                    <User className="w-4 h-4 mr-2" />
-                    Mi Perfil
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to="/perfil/direcciones" className="cursor-pointer">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    Mis Direcciones
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link to="/login" className="cursor-pointer text-destructive">
+            {user && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Avatar className="w-8 h-8">
+                      <AvatarImage src={user.avatar || undefined} />
+                      <AvatarFallback className="bg-accent/20 text-accent">
+                        {user.name.charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-medium">{user.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {user.email}
+                    </p>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/perfil" className="cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Mi Perfil
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="cursor-pointer text-destructive"
+                    onClick={handleLogout}
+                  >
                     <LogOut className="w-4 h-4 mr-2" />
                     Cerrar Sesión
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -182,64 +234,14 @@ const UserHeader = () => {
             className="lg:hidden"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
-            {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
           </Button>
         </div>
       </div>
-
-      {/* Mobile Menu */}
-      {isMenuOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          className="lg:hidden border-t border-border/50 bg-card/95 backdrop-blur-xl"
-        >
-          <div className="container mx-auto px-4 py-4 space-y-4">
-            {/* Location Selector - Mobile */}
-            <div className="pb-4 border-b border-border/50">
-              <p className="text-xs text-muted-foreground mb-2">Ubicación</p>
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="w-full bg-muted/50 border-border/50">
-                  <MapPin className="w-4 h-4 mr-2 text-emphasis" />
-                  <SelectValue placeholder="Seleccionar ubicación" />
-                </SelectTrigger>
-                <SelectContent>
-                  {municipios.map((municipio) => (
-                    <SelectItem key={municipio.value} value={municipio.value}>
-                      {municipio.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {navItems.map((item) => (
-              <Link
-                key={item.label}
-                to={item.href}
-                className={`block font-medium py-2 ${
-                  isActive(item.href) ? "text-accent" : "text-foreground"
-                }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.label}
-              </Link>
-            ))}
-            <div className="pt-4 border-t border-border/50 space-y-3">
-              <Button variant="hero" className="w-full" asChild>
-                <Link to="/orden/crear">Nueva Orden</Link>
-              </Button>
-              <Button variant="outline" className="w-full" asChild>
-                <Link to="/perfil">Mi Perfil</Link>
-              </Button>
-              <Button variant="ghost" className="w-full text-destructive" asChild>
-                <Link to="/login">Cerrar Sesión</Link>
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-      )}
     </motion.header>
   );
 };
