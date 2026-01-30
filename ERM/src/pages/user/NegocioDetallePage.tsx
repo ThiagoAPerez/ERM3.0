@@ -3,33 +3,41 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
-  Star,
   Clock,
-  MapPin,
   Plus,
   Minus,
   ShoppingBag,
   Heart,
+  Star,
+  MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { api } from "@/lib/api";
-import { BusinessBackendDTO } from "./NegociosClientePage";
 
-/* =====================  ENUMS  ===================== */
-enum ProductCategory {
-  FOOD = "FOOD",
-  DRINK = "DRINK",
-  ALCOHOL = "ALCOHOL",
-  MEDICINE = "MEDICINE",
-  GROCERY = "GROCERY",
-  OTHER = "OTHER",
+/* ===================== TYPES ===================== */
+
+interface BusinessDetailPublicResponse {
+  id: number;
+  name: string;
+  description: string;
+  municipality: string;
+  category: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  preparationTimeMinutes: number;
 }
 
-/* =====================  INTERFACES  ===================== */
-interface ProductBackendDTO {
+interface IngredientPublicResponse {
+  id: number;
+  name: string;
+  extraPrice: number;
+}
+
+interface ProductWithIngredientsPublicResponse {
   id: number;
   name: string;
   description: string;
@@ -37,104 +45,128 @@ interface ProductBackendDTO {
   currency: string;
   imageUrl: string | null;
   available: boolean;
-  createdAt: string;
-  category: ProductCategory;
+  category: string;
+  ingredients: IngredientPublicResponse[];
 }
 
-/* =====================  UI MODELS  ===================== */
-interface ProductoUI {
-  id: number;
-  nombre: string;
-  descripcion: string;
-  precio: number;
-  imagen: string | null;
-}
+/* ===================== LABELS ===================== */
 
-interface CategoriaUI {
-  nombre: string;
-  productos: ProductoUI[];
-}
+const CATEGORY_LABELS: Record<string, string> = {
+  FOOD: "Comida",
+  DRINK: "Bebidas",
+  DESSERT: "Postres",
+};
 
-/* =====================  MAPPER  ===================== */
-function mapProductToUI(product: ProductBackendDTO): ProductoUI {
-  return {
-    id: product.id,
-    nombre: product.name,
-    descripcion: product.description,
-    precio: product.price,
-    imagen: product.imageUrl
-      ? `http://localhost:9090${product.imageUrl}`
-      : null,
-  };
-}
+//===================== CONSTANTS ===================== //
 
-/* =====================  COMPONENT  ===================== */
+const FILES_BASE_URL = "http://localhost:9090";
+
+/* ===================== PAGE ===================== */
+
 const NegocioDetallePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [productosBackend, setProductosBackend] = useState<ProductBackendDTO[]>(
-    [],
+  const [business, setBusiness] = useState<BusinessDetailPublicResponse | null>(
+    null,
   );
-  const [business, setBusiness] = useState<BusinessBackendDTO | null>(null);
+
+  const [products, setProducts] = useState<
+    ProductWithIngredientsPublicResponse[]
+  >([]);
+
+  const [loading, setLoading] = useState(true);
+
   const [carrito, setCarrito] = useState<Record<number, number>>({});
+  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<
+    Record<number, number[]>
+  >({});
 
-  /* =====================  LOAD BUSINESS  ===================== */
+  /* ================= FETCH ================= */
+
   useEffect(() => {
     if (!id) return;
+    const businessId = Number(id);
 
-    api
-      .get<BusinessBackendDTO>(`/businesses/${id}`)
-      .then((res) => setBusiness(res.data))
-      .catch(() => setBusiness(null));
-  }, [id]);
+    const fetchAll = async () => {
+      try {
+        const bRes = await api.get<BusinessDetailPublicResponse>(
+          `/businesses/${businessId}`,
+        );
+        setBusiness(bRes.data);
 
-  /* =====================  BUSINESS UI  ===================== */
-  const negocio = {
-    id: id || "1",
-    nombre: business?.name ?? "Negocio",
-    descripcion: business?.description ?? "Descripción pendiente",
-    imagen: business?.coverUrl
-      ? `http://localhost:9090${business.coverUrl}`
-      : "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800",
-    rating: 4.8,
-    reviews: 0,
-    tiempoEntrega: "40-50 min",
-    distancia: "5 km",
-    categorias: business?.categories ?? [],
-  };
+        const pRes = await api.get<ProductWithIngredientsPublicResponse[]>(
+          `/businesses/${businessId}/products?providerType=BUSINESS`,
+        );
 
-  /* =====================  LOAD PRODUCTS  ===================== */
-  useEffect(() => {
-    if (!id) return;
+        setProducts(Array.isArray(pRes.data) ? pRes.data : []);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo cargar el negocio",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    api
-      .get<ProductBackendDTO[]>(
-        `/businesses/${id}/products?providerType=BUSINESS`,
-      )
-      .then((res) => setProductosBackend(res.data))
-      .catch(() => setProductosBackend([]));
-  }, [id]);
+    fetchAll();
+  }, [id, toast]);
 
-  /* =====================  GROUP BY CATEGORY  ===================== */
-  const categorias: CategoriaUI[] = useMemo(() => {
-    const map = new Map<ProductCategory, ProductoUI[]>();
+  /* ================= ADAPTADORES ================= */
 
-    productosBackend.forEach((product) => {
-      const uiProduct = mapProductToUI(product);
-      const list = map.get(product.category) ?? [];
-      list.push(uiProduct);
-      map.set(product.category, list);
-    });
+  const categorias = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        nombre: string;
+        productos: {
+          id: number;
+          nombre: string;
+          descripcion: string;
+          precio: number;
+          imagen: string | null;
+          ingredientes: IngredientPublicResponse[];
+        }[];
+      }
+    > = {};
 
-    return Array.from(map.entries()).map(([category, productos]) => ({
-      nombre: category,
-      productos,
-    }));
-  }, [productosBackend]);
+    for (const p of products) {
+      if (!map[p.category]) {
+        map[p.category] = {
+          nombre: CATEGORY_LABELS[p.category] ?? p.category,
+          productos: [],
+        };
+      }
 
-  /* =====================  HELPERS  ===================== */
+      map[p.category].productos.push({
+        id: p.id,
+        nombre: p.name,
+        descripcion: p.description,
+        precio: p.price,
+        imagen: p.imageUrl,
+        ingredientes: p.ingredients,
+      });
+    }
+
+    return Object.values(map);
+  }, [products]);
+
+  const negocio = useMemo(() => {
+    if (!business) return null;
+    return {
+      categorias: [CATEGORY_LABELS[business.category] ?? business.category],
+      rating: 4.5,
+      reviews: 10,
+      tiempoEntrega: "40-45 min",
+      distancia: "5 km",
+    };
+  }, [business]);
+
+  /* ================= HELPERS ================= */
+
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -142,50 +174,64 @@ const NegocioDetallePage = () => {
       minimumFractionDigits: 0,
     }).format(price);
 
-  const handleAddToCart = (productoId: number) => {
-    setCarrito((prev) => ({
-      ...prev,
-      [productoId]: (prev[productoId] || 0) + 1,
-    }));
+  const totalItems = useMemo(
+    () => Object.values(carrito).reduce((a, b) => a + b, 0),
+    [carrito],
+  );
 
-    toast({
-      title: "Agregado al carrito",
-      description: "Producto agregado correctamente",
+  const totalPrice = useMemo(() => {
+    return Object.entries(carrito).reduce((sum, [id, qty]) => {
+      const product = products.find((p) => p.id === Number(id));
+      if (!product) return sum;
+      return sum + product.price * qty;
+    }, 0);
+  }, [carrito, products]);
+
+  /* ================= HANDLERS ================= */
+
+  const handleAddToCart = (id: number) =>
+    setCarrito((p) => ({ ...p, [id]: (p[id] || 0) + 1 }));
+
+  const handleRemoveFromCart = (id: number) =>
+    setCarrito((p) => {
+      const n = { ...p };
+      if (n[id] > 1) n[id]--;
+      else delete n[id];
+      return n;
     });
-  };
 
-  const handleRemoveFromCart = (productoId: number) => {
-    setCarrito((prev) => {
-      const copy = { ...prev };
-      if (copy[productoId] > 1) copy[productoId]--;
-      else delete copy[productoId];
-      return copy;
+  const handleIngredienteToggle = (pid: number, iid: number) =>
+    setIngredientesSeleccionados((p) => {
+      const cur = p[pid] || [];
+      return {
+        ...p,
+        [pid]: cur.includes(iid) ? cur.filter((x) => x !== iid) : [...cur, iid],
+      };
     });
-  };
 
-  const totalItems = Object.values(carrito).reduce((a, b) => a + b, 0);
+  /* ================= UI GUARD ================= */
 
-  const totalPrice = Object.entries(carrito).reduce((sum, [id, qty]) => {
-    const product = productosBackend.find((p) => p.id === Number(id));
-    return sum + (product?.price ?? 0) * qty;
-  }, 0);
+  if (loading || !business || !negocio) return null;
 
-  /* =====================  JSX  ===================== */
+  /* ================= RENDER ================= */
+
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Hero */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="relative h-64 md:h-80"
-      >
+      {/* Hero Image */}
+      <div className="relative h-64 md:h-80">
         <img
-          src={negocio.imagen}
-          alt={negocio.nombre}
+          src={
+            business.coverUrl
+              ? `${FILES_BASE_URL}${business.coverUrl}`
+              : "/placeholder/cover.jpg"
+          }
+          alt={business.name}
           className="w-full h-full object-cover"
         />
+
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
 
+        {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -201,6 +247,7 @@ const NegocioDetallePage = () => {
           </Button>
         </motion.div>
 
+        {/* Favorite Button */}
         <motion.div
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
@@ -214,9 +261,9 @@ const NegocioDetallePage = () => {
             <Heart className="w-5 h-5" />
           </Button>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* Info */}
+      {/* Business Info */}
       <div className="container mx-auto px-4 -mt-16 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -225,120 +272,176 @@ const NegocioDetallePage = () => {
           <Card className="glass-card">
             <CardContent className="p-6">
               <div className="flex flex-wrap gap-2 mb-3">
-                {negocio.categorias.map((cat: string) => (
+                {negocio.categorias.map((cat) => (
                   <Badge key={cat} variant="secondary" className="text-xs">
                     {cat}
                   </Badge>
                 ))}
               </div>
 
-              <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
-                {negocio.nombre}
+              <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2">
+                {business?.name}
               </h1>
 
               <p className="text-muted-foreground mb-4">
-                {negocio.descripcion}
+                {business?.description}
               </p>
 
-              <div className="flex flex-wrap gap-4 text-sm">
-                <span className="flex items-center gap-1">
+              <div className="flex flex-wrap items-center gap-4 text-sm">
+                <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-accent text-accent" />
-                  {negocio.rating}
-                </span>
-                <span className="flex items-center gap-1">
+                  <span className="font-medium">{negocio.rating}</span>
+                  <span className="text-muted-foreground">
+                    ({negocio.reviews})
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   {negocio.tiempoEntrega}
-                </span>
-                <span className="flex items-center gap-1">
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
                   <MapPin className="w-4 h-4" />
                   {negocio.distancia}
-                </span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
       </div>
 
-      {/* Productos */}
+      {/* Menu Categories */}
       <div className="container mx-auto px-4 mt-8">
-        {categorias.map((categoria, idx) => (
+        {categorias.map((categoria, catIndex) => (
           <motion.div
             key={categoria.nombre}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.1 }}
+            transition={{ delay: catIndex * 0.1 }}
             className="mb-8"
           >
-            <h2 className="text-xl font-display font-bold mb-4">
+            <h2 className="text-xl font-display font-bold text-foreground mb-4">
               {categoria.nombre}
             </h2>
 
-            {categoria.productos.map((producto) => (
-              <Card
-                key={producto.id}
-                className="glass-card mb-4 overflow-hidden"
-              >
-                <CardContent className="p-0">
-                  <div className="flex flex-col md:flex-row">
-                    {producto.imagen && (
+            <div className="space-y-4">
+              {categoria.productos.map((producto) => (
+                <Card key={producto.id} className="glass-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex flex-col md:flex-row">
+                      {/* Product Image */}
                       <div className="md:w-40 h-40 md:h-auto flex-shrink-0">
                         <img
-                          src={producto.imagen}
+                          src={
+                            producto.imagen
+                              ? `${FILES_BASE_URL}${producto.imagen}`
+                              : "/placeholder/product.jpg"
+                          }
                           alt={producto.nombre}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                    )}
 
-                    <div className="flex-1 p-4">
-                      <div className="flex justify-between mb-2">
-                        <h3 className="font-semibold">{producto.nombre}</h3>
-                        <span className="text-accent font-bold">
-                          {formatPrice(producto.precio)}
-                        </span>
-                      </div>
+                      {/* Product Info */}
+                      <div className="flex-1 p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-semibold text-foreground">
+                            {producto.nombre}
+                          </h3>
+                          <span className="font-bold text-accent">
+                            {formatPrice(producto.precio)}
+                          </span>
+                        </div>
 
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {producto.descripcion}
-                      </p>
+                        <p className="text-sm text-muted-foreground mb-3">
+                          {producto.descripcion}
+                        </p>
 
-                      <div className="flex justify-end gap-2">
-                        {carrito[producto.id] ? (
-                          <>
+                        {/* Ingredients */}
+                        <div className="mb-4">
+                          <p className="text-xs font-medium text-muted-foreground mb-2">
+                            Extras disponibles:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {producto.ingredientes.length === 0 ? (
+                              <span className="text-xs text-muted-foreground">
+                                Sin extras disponibles
+                              </span>
+                            ) : (
+                              producto.ingredientes.map((ingrediente) => (
+                                <label
+                                  key={ingrediente.id}
+                                  className="flex items-center gap-1.5 text-xs cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={(
+                                      ingredientesSeleccionados[producto.id] ||
+                                      []
+                                    ).includes(ingrediente.id)}
+                                    onCheckedChange={() =>
+                                      handleIngredienteToggle(
+                                        producto.id,
+                                        ingrediente.id,
+                                      )
+                                    }
+                                    className="w-3.5 h-3.5"
+                                  />
+                                  <span className="text-muted-foreground">
+                                    {ingrediente.name}
+                                    {ingrediente.extraPrice > 0 && (
+                                      <span className="ml-1">
+                                        (+{formatPrice(ingrediente.extraPrice)})
+                                      </span>
+                                    )}
+                                  </span>
+                                </label>
+                              ))
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Add to Cart */}
+                        <div className="flex items-center justify-end gap-2">
+                          {carrito[producto.id] ? (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="h-8 w-8"
+                                onClick={() =>
+                                  handleRemoveFromCart(producto.id)
+                                }
+                              >
+                                <Minus className="w-4 h-4" />
+                              </Button>
+                              <span className="w-8 text-center font-medium">
+                                {carrito[producto.id]}
+                              </span>
+                              <Button
+                                size="icon"
+                                variant="outline"
+                                className="h-8 w-8"
+                                onClick={() => handleAddToCart(producto.id)}
+                              >
+                                <Plus className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          ) : (
                             <Button
-                              size="icon"
-                              variant="outline"
-                              onClick={() => handleRemoveFromCart(producto.id)}
-                            >
-                              <Minus className="w-4 h-4" />
-                            </Button>
-                            <span className="w-8 text-center font-medium">
-                              {carrito[producto.id]}
-                            </span>
-                            <Button
-                              size="icon"
-                              variant="outline"
+                              size="sm"
+                              variant="hero"
                               onClick={() => handleAddToCart(producto.id)}
                             >
-                              <Plus className="w-4 h-4" />
+                              <Plus className="w-4 h-4 mr-1" />
+                              Agregar
                             </Button>
-                          </>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="hero"
-                            onClick={() => handleAddToCart(producto.id)}
-                          >
-                            <Plus className="w-4 h-4 mr-1" />
-                            Agregar
-                          </Button>
-                        )}
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </motion.div>
         ))}
       </div>
@@ -348,13 +451,13 @@ const NegocioDetallePage = () => {
         <motion.div
           initial={{ opacity: 0, y: 100 }}
           animate={{ opacity: 1, y: 0 }}
-          className="fixed bottom-0 inset-x-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border"
+          className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-xl border-t border-border"
         >
           <div className="container mx-auto">
             <Button
               variant="hero"
               className="w-full h-14 text-base"
-              onClick={() => navigate("/carrito")}
+              onClick={() => navigate("/orden/confirmar")}
             >
               <ShoppingBag className="w-5 h-5 mr-2" />
               Ver carrito ({totalItems}) · {formatPrice(totalPrice)}

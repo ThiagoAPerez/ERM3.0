@@ -3,7 +3,7 @@ package com.elrapidin.api.controller.client;
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.dto.business.BusinessDetailPublicResponse;
 import com.elrapidin.api.dto.business.BusinessPublicResponse;
-import com.elrapidin.api.dto.product.ProductPublicResponse;
+import com.elrapidin.api.dto.product.ProductWithIngredientsPublicResponse;
 import com.elrapidin.api.service.businesses.BusinessQueryService;
 import com.elrapidin.api.service.order.ProductQueryService;
 
@@ -40,16 +40,16 @@ public class BusinessPublicController {
     public BusinessDetailPublicResponse getBusinessDetail(
             @PathVariable Long id) {
         return businessQueryService.getBusinessDetail(id);
-
     }
 
     // ===============================
     // PRODUCTOS PÚBLICOS DEL NEGOCIO
     // ===============================
     @GetMapping("/{id}/products")
-    public List<ProductPublicResponse> getBusinessProducts(
+    public List<ProductWithIngredientsPublicResponse> getBusinessProducts(
             @PathVariable Long id,
             @RequestParam BusinessesCategory providerType) {
+
         return productQueryService.getPublicProductsByProvider(providerType, id);
     }
 }

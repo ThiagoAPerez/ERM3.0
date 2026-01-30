@@ -44,16 +44,17 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
+import ProductAdditionsSelector from "../../components/admin/ProductAdditonSelector";
 
 /* ===================== TYPES ===================== */
 
 type ProviderType = "BUSINESS" | "STORE" | "SERVICE";
+
 type ProviderCategory =
   | "RESTAURANT"
   | "STORE"
   | "LICORERA"
   | "MEDICAMENT_STORE"
-  | "SERVICE"
   | "OTHER";
 
 type ProductCategory =
@@ -67,6 +68,12 @@ type ProductCategory =
 type ProductStatus = "ACTIVE" | "INACTIVE" | "DELETED";
 
 /* ===================== INTERFACES ===================== */
+
+export interface ProductAddition {
+  id: number;
+  name: string;
+  extraPrice: number;
+}
 
 interface Negocio {
   id: number;
@@ -115,6 +122,7 @@ const ProductosPage = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [selectedAdditions, setSelectedAdditions] = useState<number[]>([]);
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -179,9 +187,20 @@ const ProductosPage = () => {
         productId = String(res.data.id);
       }
 
+      if (productId && selectedAdditions.length > 0) {
+        await Promise.all(
+          selectedAdditions.map((ingredientId) =>
+            api.post(`/admin/ingredients/products/${productId}`, {
+              ingredientId,
+            }),
+          ),
+        );
+      }
+
       await loadProducts();
       setEditingProducto(null);
       setImageUrl(null);
+      setSelectedAdditions([]);
       setIsDialogOpen(false);
     } catch (e) {
       console.error(e);
@@ -206,6 +225,8 @@ const ProductosPage = () => {
   /* ===================== DIALOG ===================== */
 
   const handleOpenDialog = (p?: Producto) => {
+    setSelectedAdditions([]);
+
     if (p) {
       setEditingProducto(p);
       setImageUrl(p.imageUrl);
@@ -263,7 +284,6 @@ const ProductosPage = () => {
       filterNegocio === "all" || p.providerId === filterNegocio;
     return matchesSearch && matchesNegocio;
   });
-
   //============================================================
   // =================== UI ================================
 
@@ -420,8 +440,11 @@ const ProductosPage = () => {
                             onClick={() => handleToggleEstado(producto)}
                           >
                             <Power className="w-4 h-4 mr-2" />
-                            {producto.status ? "Desactivar" : "Activar"}
+                            {producto.status === "ACTIVE"
+                              ? "Desactivar"
+                              : "Activar"}
                           </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             onClick={() => handleDelete(producto.id)}
@@ -608,6 +631,11 @@ const ProductosPage = () => {
                 rows={3}
               />
             </div>
+            <ProductAdditionsSelector
+              productId={editingProducto?.id}
+              value={selectedAdditions}
+              onChange={setSelectedAdditions}
+            />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">

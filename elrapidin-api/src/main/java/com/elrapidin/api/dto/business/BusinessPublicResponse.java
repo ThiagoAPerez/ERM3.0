@@ -69,4 +69,5 @@ public class BusinessPublicResponse {
     public void setCategory(String category) {
         this.category = category;
     }
+
 }

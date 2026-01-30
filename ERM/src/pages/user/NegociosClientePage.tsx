@@ -73,11 +73,11 @@ export function mapBusinessToCard(backend: BusinessBackendDTO): BusinessCard {
 
     descripcion: backend.description ?? "Delicioso lugar para disfrutar",
 
-    rating: 4,
-    reviews: 0,
+    rating: 4.5,
+    reviews: 10,
     deliveryTime: "40-50 min",
     distance: "5 km",
-    tags: ["Antioqueña"],
+    tags: [],
   };
 }
 

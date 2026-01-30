@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
@@ -66,6 +67,9 @@ public class ProductEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ProductStatus status = ProductStatus.ACTIVE;
+
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProductIngredientEntity> productIngredients;
 
     public Long getId() {
         return id;
@@ -186,4 +190,13 @@ public class ProductEntity {
     public void setProviderCategory(BusinessesCategory providerCategory) {
         this.providerCategory = providerCategory;
     }
+
+    public Set<ProductIngredientEntity> getProductIngredients() {
+        return productIngredients;
+    }
+
+    public void setProductIngredients(Set<ProductIngredientEntity> productIngredients) {
+        this.productIngredients = productIngredients;
+    }
+
 }

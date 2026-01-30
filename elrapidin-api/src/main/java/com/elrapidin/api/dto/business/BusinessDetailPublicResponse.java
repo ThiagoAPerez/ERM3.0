@@ -35,10 +35,6 @@ public class BusinessDetailPublicResponse {
         return address;
     }
 
-    public String getMunicipality() {
-        return municipality;
-    }
-
     public String getLogoUrl() {
         return logoUrl;
     }
@@ -73,10 +69,6 @@ public class BusinessDetailPublicResponse {
         this.address = address;
     }
 
-    public void setMunicipality(String municipality) {
-        this.municipality = municipality;
-    }
-
     public void setLogoUrl(String logoUrl) {
         this.logoUrl = logoUrl;
     }
@@ -89,6 +81,14 @@ public class BusinessDetailPublicResponse {
         this.preparationTimeMinutes = preparationTimeMinutes;
     }
 
+    public String getMunicipality() {
+        return municipality;
+    }
+
+    public void setMunicipality(String municipality) {
+        this.municipality = municipality;
+    }
+
     public String getCategory() {
         return category;
     }
@@ -96,4 +96,5 @@ public class BusinessDetailPublicResponse {
     public void setCategory(String category) {
         this.category = category;
     }
+
 }
