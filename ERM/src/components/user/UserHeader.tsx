@@ -76,7 +76,7 @@ const UserHeader = () => {
     MARINILLA: "Marinilla",
     RIONEGRO: "Rionegro",
     EL_CARMEN: "El Carmen de Viboral",
-    NOASIGNADO: "Proximamente",
+    NOASIGNADO: "",
   };
 
   /* ===================== LOAD CLIENT ===================== */

@@ -5,7 +5,7 @@
 /* EL RAPIDÍN Design System - SIEMPRE EN RUTA */
 /* Futuristic, Premium, Paisa Montañero Identity */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap");
 
 @layer base {
   :root {
@@ -32,7 +32,7 @@
     --muted-foreground: 0 0% 60%;
 
     /* Accent - Vibrant Red (Energía, Velocidad) */
-    --accent: 0 85% 55%;
+    --accent: 35 95% 55%;
     --accent-foreground: 0 0% 98%;
 
     /* Emphasis - Bold Yellow (CTAs, Alertas) */
@@ -59,10 +59,27 @@
     --radius: 0.75rem;
 
     /* Gradients */
-    --gradient-brand: linear-gradient(135deg, hsl(0 85% 55%) 0%, hsl(45 100% 50%) 100%);
-    --gradient-dark: linear-gradient(180deg, hsl(0 0% 7%) 0%, hsl(0 0% 4%) 100%);
-    --gradient-glow: radial-gradient(ellipse at center, hsl(0 85% 55% / 0.15) 0%, transparent 70%);
-    --gradient-route: linear-gradient(90deg, hsl(0 85% 55%) 0%, hsl(45 100% 50%) 50%, hsl(0 85% 55%) 100%);
+    --gradient-brand: linear-gradient(
+      135deg,
+      hsl(0 85% 55%) 0%,
+      hsl(45 100% 50%) 100%
+    );
+    --gradient-dark: linear-gradient(
+      180deg,
+      hsl(0 0% 7%) 0%,
+      hsl(0 0% 4%) 100%
+    );
+    --gradient-glow: radial-gradient(
+      ellipse at center,
+      hsl(0 85% 55% / 0.15) 0%,
+      transparent 70%
+    );
+    --gradient-route: linear-gradient(
+      90deg,
+      hsl(0 85% 55%) 0%,
+      hsl(45 100% 50%) 50%,
+      hsl(0 85% 55%) 100%
+    );
 
     /* Shadows */
     --shadow-sm: 0 2px 8px hsl(0 0% 0% / 0.3);
@@ -98,11 +115,16 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: "Inter", system-ui, sans-serif;
   }
 
-  h1, h2, h3, h4, h5, h6 {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: "Space Grotesk", "Inter", system-ui, sans-serif;
     @apply font-bold tracking-tight;
   }
 }
@@ -153,14 +175,14 @@
   }
 
   .pulse-live::before {
-    content: '';
+    content: "";
     @apply absolute w-2 h-2 rounded-full bg-success;
     animation: pulse-ring 1.5s ease-out infinite;
   }
 
   /* Number Display (Financial) */
   .number-display {
-    font-family: 'Space Grotesk', monospace;
+    font-family: "Space Grotesk", monospace;
     font-variant-numeric: tabular-nums;
     @apply tracking-tight font-semibold;
   }
@@ -169,8 +191,12 @@
 @layer utilities {
   /* Animations */
   @keyframes route-flow {
-    0% { background-position: 0% 50%; }
-    100% { background-position: 200% 50%; }
+    0% {
+      background-position: 0% 50%;
+    }
+    100% {
+      background-position: 200% 50%;
+    }
   }
 
   @keyframes pulse-ring {
@@ -185,8 +211,13 @@
   }
 
   @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+    0%,
+    100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
   }
 
   @keyframes slide-up {
@@ -201,8 +232,12 @@
   }
 
   @keyframes fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   .animate-float {
@@ -218,9 +253,19 @@
   }
 
   /* Stagger delays */
-  .delay-100 { animation-delay: 100ms; }
-  .delay-200 { animation-delay: 200ms; }
-  .delay-300 { animation-delay: 300ms; }
-  .delay-400 { animation-delay: 400ms; }
-  .delay-500 { animation-delay: 500ms; }
+  .delay-100 {
+    animation-delay: 100ms;
+  }
+  .delay-200 {
+    animation-delay: 200ms;
+  }
+  .delay-300 {
+    animation-delay: 300ms;
+  }
+  .delay-400 {
+    animation-delay: 400ms;
+  }
+  .delay-500 {
+    animation-delay: 500ms;
+  }
 }

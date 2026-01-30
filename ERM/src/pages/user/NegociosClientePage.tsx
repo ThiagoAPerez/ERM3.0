@@ -68,15 +68,16 @@ export function mapBusinessToCard(backend: BusinessBackendDTO): BusinessCard {
     id: backend.id,
     name: backend.name,
     category: backend.category,
-    image: backend.logoUrl,
+
+    image: backend.logoUrl ? `http://localhost:9090${backend.logoUrl}` : null,
+
     descripcion: backend.description ?? "Delicioso lugar para disfrutar",
 
-    // TEMPORALES — ACORDADOS
     rating: 4,
     reviews: 0,
     deliveryTime: "40-50 min",
     distance: "5 km",
-    tags: ["Colombiana", "Antioqueña"],
+    tags: ["Antioqueña"],
   };
 }
 
@@ -134,9 +135,11 @@ const NegociosClientePage = () => {
   const categories: { id: "all" | BusinessesCategory; label: string }[] = [
     { id: "all", label: "Todos" },
     { id: "RESTAURANT", label: "Restaurantes" },
-    { id: "FAST_FOOD", label: "Comida Rápida" },
-    { id: "COFFEE", label: "Cafeterías" },
+    { id: "MEDICAMENT_STORE", label: "Farmacias" },
+    { id: "LICORERA", label: "Licorerías" },
     { id: "BAKERY", label: "Panaderías" },
+    { id: "FAST_FOOD", label: "Comida Rápida" },
+    { id: "OTHER", label: "Otros" },
   ];
 
   /* =====================  FILTERS  ===================== */
@@ -153,10 +156,10 @@ const NegociosClientePage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Restaurantes
+              Negocios
             </h1>
             <p className="text-muted-foreground">
-              Explora los mejores restaurantes cerca de ti
+              Tu solo antojate y nosotros nos encargamos del resto.
             </p>
           </div>
           <Link to="/registrar-negocio">
@@ -224,11 +227,13 @@ const NegociosClientePage = () => {
             <Link to={`/negocios/${negocio.id}`}>
               <Card className="overflow-hidden border-border hover:border-accent/50 transition-all hover:-translate-y-1 cursor-pointer group">
                 <div className="relative h-48 overflow-hidden">
-                  <img
-                    src={negocio.image ?? ""}
-                    alt={negocio.name}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                  {negocio.image && (
+                    <img
+                      src={negocio.image}
+                      alt={negocio.name}
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
                     <h3 className="text-lg font-display font-bold text-foreground mb-2">

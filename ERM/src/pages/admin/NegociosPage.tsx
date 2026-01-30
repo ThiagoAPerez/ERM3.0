@@ -42,12 +42,18 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type BusinessCategory =
+export type BusinessCategory =
   | "BUSINESS"
   | "STORE"
   | "LICORERA"
   | "RESTAURANT"
+  | "FAST_FOOD"
+  | "COFFEE"
+  | "BAKERY"
+  | "SUPERMARKET"
+  | "PETS"
   | "MEDICAMENT_STORE"
+  | "SERVICE"
   | "OTHER";
 
 type BusinessStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
@@ -68,7 +74,7 @@ export interface Negocio {
   descripcion?: string;
 }
 /* ===================== UI CONSTANTS (INTOCABLES) ===================== */
-const municipios = ["Marinilla", "Rionegro", "El Carmen de Viboral"];
+const municipios = ["MARINILLA", "RIONEGRO", "EL_CAARMEN"];
 
 const tipoLabels: Record<BusinessCategory, string> = {
   BUSINESS: "Negocio",
@@ -77,6 +83,12 @@ const tipoLabels: Record<BusinessCategory, string> = {
   RESTAURANT: "Restaurante",
   MEDICAMENT_STORE: "Droguería",
   OTHER: "Otro",
+  FAST_FOOD: "Comida Rápida",
+  COFFEE: "Cafetería",
+  BAKERY: "Panadería",
+  SUPERMARKET: "Supermercado",
+  PETS: "Tienda de Mascotas",
+  SERVICE: "",
 };
 
 const tipoColors: Record<BusinessCategory, string> = {
@@ -86,6 +98,13 @@ const tipoColors: Record<BusinessCategory, string> = {
   RESTAURANT: "bg-accent/10 text-accent",
   MEDICAMENT_STORE: "bg-green-500/10 text-green-400",
   OTHER: "bg-muted text-muted-foreground",
+
+  FAST_FOOD: "bg-orange-500/10 text-orange-400",
+  COFFEE: "bg-amber-500/10 text-amber-400",
+  BAKERY: "bg-yellow-500/10 text-yellow-400",
+  SUPERMARKET: "bg-emerald-500/10 text-emerald-400",
+  PETS: "bg-pink-500/10 text-pink-400",
+  SERVICE: "bg-cyan-500/10 text-cyan-400",
 };
 
 /* ===================== CONS ===================== */
@@ -188,17 +207,26 @@ const NegociosPage = () => {
     if (!editingNegocio) return;
 
     try {
-      const payload = {
+      const payload: any = {
         name: formData.nombre,
         phone: formData.telefono,
-        email: formData.email,
         address: formData.direccion,
         municipality: formData.municipio,
         description: formData.descripcion,
-        logoUrl: logoUrl,
-        coverUrl: coverUrl,
         category: formData.tipo,
       };
+
+      if (formData.email?.trim()) {
+        payload.email = formData.email;
+      }
+
+      if (logoUrl !== null) {
+        payload.logoUrl = logoUrl;
+      }
+
+      if (coverUrl !== null) {
+        payload.coverUrl = coverUrl;
+      }
 
       await api.put(`/admin/businesses/${editingNegocio.id}`, payload);
 

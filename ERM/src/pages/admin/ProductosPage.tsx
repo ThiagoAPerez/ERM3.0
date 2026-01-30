@@ -321,7 +321,7 @@ const ProductosPage = () => {
               <tr className="bg-muted/30 border-b border-border">
                 <th className="text-left p-4 font-semibold">Producto</th>
                 <th className="text-left p-4 font-semibold">Tipo</th>
-                <th className="text-left p-4 font-semibold">Propietario</th>
+                <th className="text-left p-4 font-semibold">Categoria</th>
                 <th className="text-right p-4 font-semibold">Costo</th>
                 <th className="text-right p-4 font-semibold">Precio</th>
                 <th className="text-right p-4 font-semibold">Margen</th>
