@@ -22,7 +22,7 @@ import {
 
 /* ===================== TYPES ===================== */
 
-interface MeResponse {
+export interface MeResponse {
   id: number;
   name: string;
   phone: string;
@@ -31,7 +31,7 @@ interface MeResponse {
   status: "ACTIVE" | "SUSPENDED";
 }
 
-interface ClientProfileResponse {
+export interface ClientProfileResponse {
   name: string;
   phone: string;
   profilePhotoUrl?: string | null;

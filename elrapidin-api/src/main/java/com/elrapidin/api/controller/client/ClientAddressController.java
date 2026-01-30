@@ -3,7 +3,9 @@ package com.elrapidin.api.controller.client;
 import com.elrapidin.api.dto.client.adress.ClientAddressResponse;
 import com.elrapidin.api.dto.client.adress.CreateClientAddressRequest;
 import com.elrapidin.api.dto.client.adress.UpdateClientAddressRequest;
+import com.elrapidin.api.security.AuthenticatedUser;
 import com.elrapidin.api.service.client.ClientAddressService;
+import com.elrapidin.api.service.client.ClientAddressServiceImpl;
 
 import jakarta.validation.Valid;
 import org.springframework.security.core.Authentication;
@@ -23,7 +25,8 @@ public class ClientAddressController {
 
     @GetMapping
     public List<ClientAddressResponse> getMyAddresses(Authentication authentication) {
-        Long userId = (Long) authentication.getPrincipal();
+        AuthenticatedUser auth = (AuthenticatedUser) authentication.getPrincipal();
+        Long userId = auth.getUserId();
         return clientAddressService.getMyAddresses(userId);
     }
 
@@ -31,7 +34,10 @@ public class ClientAddressController {
     public void createAddress(
             Authentication authentication,
             @Valid @RequestBody CreateClientAddressRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+
+        AuthenticatedUser auth = (AuthenticatedUser) authentication.getPrincipal();
+        Long userId = auth.getUserId();
+
         clientAddressService.createAddress(userId, request);
     }
 
@@ -40,7 +46,10 @@ public class ClientAddressController {
             Authentication authentication,
             @PathVariable Long id,
             @Valid @RequestBody UpdateClientAddressRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
+
+        AuthenticatedUser auth = (AuthenticatedUser) authentication.getPrincipal();
+        Long userId = auth.getUserId();
+
         clientAddressService.updateAddress(userId, id, request);
     }
 
@@ -48,7 +57,19 @@ public class ClientAddressController {
     public void deleteAddress(
             Authentication authentication,
             @PathVariable Long id) {
-        Long userId = (Long) authentication.getPrincipal();
+
+        AuthenticatedUser auth = (AuthenticatedUser) authentication.getPrincipal();
+        Long userId = auth.getUserId();
+
         clientAddressService.deleteAddress(userId, id);
+    }
+
+    @PatchMapping("/{id}/primary")
+    public void setPrimary(
+            Authentication authentication,
+            @PathVariable Long id) {
+
+        AuthenticatedUser auth = (AuthenticatedUser) authentication.getPrincipal();
+        clientAddressService.setPrimaryAddress(auth.getUserId(), id);
     }
 }

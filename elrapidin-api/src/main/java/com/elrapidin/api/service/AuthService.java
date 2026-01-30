@@ -6,6 +6,7 @@ import com.elrapidin.api.domain.enums.user.UserRole;
 import com.elrapidin.api.domain.enums.user.UserStatus;
 import com.elrapidin.api.domain.repository.UserRepository;
 import com.elrapidin.api.domain.repository.ClientProfileRepository;
+import com.elrapidin.api.dto.auth.AuthResponse;
 import com.elrapidin.api.dto.auth.LoginRequest;
 import com.elrapidin.api.dto.auth.RegisterRequest;
 import com.elrapidin.api.exception.ApiException;
@@ -38,7 +39,7 @@ public class AuthService {
     // Registro de usuario CLIENT + ClientProfile
     // =====================================================
     @Transactional
-    public String register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request) {
 
         if (userRepository.existsByPhone(request.getPhone())) {
             throw new ApiException("Phone already registered", 409);
@@ -62,18 +63,21 @@ public class AuthService {
         profile.setName(request.getName());
         profile.setPhone(request.getPhone());
         profile.setProfilePhotoUrl(null);
-
         clientProfileRepository.save(profile);
 
-        return jwtService.generateToken(user.getId(), user.getRole().name());
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getRole().name());
+
+        return new AuthResponse(token, user.getRole());
     }
 
     // =====================================================
     // Login
     // =====================================================
-    public String login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request) {
 
-        String identifier = request.getIdentifier(); // puede ser phone o email
+        String identifier = request.getIdentifier(); // phone o email
 
         UserEntity user = userRepository
                 .findByPhone(identifier)
@@ -87,7 +91,10 @@ public class AuthService {
             throw new UnauthorizedException("Invalid credentials");
         }
 
-        return jwtService.generateToken(user.getId(), user.getRole().name());
-    }
+        String token = jwtService.generateToken(
+                user.getId(),
+                user.getRole().name());
 
+        return new AuthResponse(token, user.getRole());
+    }
 }

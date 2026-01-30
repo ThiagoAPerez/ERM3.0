@@ -3,7 +3,7 @@ package com.elrapidin.api.dto.admin;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-import com.elrapidin.api.domain.enums.businesses.ProviderType;
+import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 import com.elrapidin.api.domain.enums.product.ProductStatus;
 
@@ -14,7 +14,7 @@ public class AdminProductResponse {
     private String description;
 
     // ===== PROVIDER REAL =====
-    private ProviderType providerType;
+    private BusinessesCategory providerType;
     private Long providerId;
 
     private ProductCategory category;
@@ -32,7 +32,7 @@ public class AdminProductResponse {
             Long id,
             String name,
             String description,
-            ProviderType providerType,
+            BusinessesCategory providerType,
             Long providerId,
             ProductCategory category,
             ProductStatus status,
@@ -82,11 +82,11 @@ public class AdminProductResponse {
         this.description = description;
     }
 
-    public ProviderType getProviderType() {
+    public BusinessesCategory getProviderType() {
         return providerType;
     }
 
-    public void setProviderType(ProviderType providerType) {
+    public void setProviderType(BusinessesCategory providerType) {
         this.providerType = providerType;
     }
 

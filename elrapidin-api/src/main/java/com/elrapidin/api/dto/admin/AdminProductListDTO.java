@@ -1,7 +1,6 @@
 package com.elrapidin.api.dto.admin;
 
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
-import com.elrapidin.api.domain.enums.businesses.ProviderType;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 import com.elrapidin.api.domain.enums.product.ProductStatus;
 
@@ -13,7 +12,7 @@ public class AdminProductListDTO {
     private String name;
     private String description;
 
-    private ProviderType providerType;
+    private BusinessesCategory providerType;
     private Long providerId;
     private String providerName;
     private BusinessesCategory providerCateory;
@@ -66,11 +65,11 @@ public class AdminProductListDTO {
         this.description = description;
     }
 
-    public ProviderType getProviderType() {
+    public BusinessesCategory getProviderType() {
         return providerType;
     }
 
-    public void setProviderType(ProviderType providerType) {
+    public void setProviderType(BusinessesCategory providerType) {
         this.providerType = providerType;
     }
 

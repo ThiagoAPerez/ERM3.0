@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,92 +7,140 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Star, Clock, MapPin, Filter, Store } from "lucide-react";
 
+/* =====================  ENUMS  ===================== */
+//====================================================
+// 1:1 CON BACKEND
+
+type BusinessesCategory =
+  | "BUSINESS"
+  | "STORE"
+  | "LICORERA"
+  | "RESTAURANT"
+  | "FAST_FOOD"
+  | "COFFEE"
+  | "BAKERY"
+  | "SUPERMARKET"
+  | "PETS"
+  | "MEDICAMENT_STORE"
+  | "OTHER"
+  | "SERVICE";
+
+/* =====================  INTERFACES  ===================== */
+//==========================================================
+// EXACTO AL PAYLOAD REAL DEL BACKEND
+
+export interface BusinessBackendDTO {
+  id: number;
+  name: string;
+  description: string | null;
+  phone: string;
+  address: string | null;
+  municipality: string | null;
+  category: BusinessesCategory;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  preparationTimeMinutes: number;
+}
+
+export interface BusinessCard {
+  id: number;
+  name: string;
+  category: BusinessesCategory;
+
+  image: string | null;
+
+  rating: number;
+  reviews: number;
+  descripcion: string;
+
+  deliveryTime: string;
+  distance: string;
+
+  tags: string[];
+}
+
+/* =====================  MAPPER  ===================== */
+//======================================================
+// ÚNICO LUGAR CON DATOS TEMPORALES
+
+export function mapBusinessToCard(backend: BusinessBackendDTO): BusinessCard {
+  return {
+    id: backend.id,
+    name: backend.name,
+    category: backend.category,
+    image: backend.logoUrl,
+    descripcion: backend.description ?? "Delicioso lugar para disfrutar",
+
+    // TEMPORALES — ACORDADOS
+    rating: 4,
+    reviews: 0,
+    deliveryTime: "40-50 min",
+    distance: "5 km",
+    tags: ["Colombiana", "Antioqueña"],
+  };
+}
+
+/* =====================  COMPONENT  ===================== */
+//==========================================================
+
 const NegociosClientePage = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState<
+    "all" | BusinessesCategory
+  >("all");
 
-  const categories = [
-    { id: "all", label: "Todos" },
-    { id: "restaurante", label: "Restaurantes" },
-    { id: "comida_rapida", label: "Comida Rápida" },
-    { id: "cafeteria", label: "Cafeterías" },
-    { id: "panaderia", label: "Panaderías" },
-  ];
+  const [backendBusinesses, setBackendBusinesses] = useState<
+    BusinessBackendDTO[]
+  >([]);
 
-  const negocios = [
-    {
-      id: 1,
-      name: "Restaurante La Esquina",
-      category: "restaurante",
-      image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=400",
-      rating: 4.8,
-      reviews: 124,
-      deliveryTime: "25-35 min",
-      distance: "1.2 km",
-      tags: ["Colombiana", "Casera"],
-    },
-    {
-      id: 2,
-      name: "Burger House",
-      category: "comida_rapida",
-      image: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=400",
-      rating: 4.5,
-      reviews: 89,
-      deliveryTime: "20-30 min",
-      distance: "0.8 km",
-      tags: ["Hamburguesas", "Americana"],
-    },
-    {
-      id: 3,
-      name: "Café del Parque",
-      category: "cafeteria",
-      image: "https://images.unsplash.com/photo-1554118811-1e0d58224f24?w=400",
-      rating: 4.9,
-      reviews: 210,
-      deliveryTime: "15-25 min",
-      distance: "0.5 km",
-      tags: ["Café", "Postres"],
-    },
-    {
-      id: 4,
-      name: "Panadería San José",
-      category: "panaderia",
-      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=400",
-      rating: 4.7,
-      reviews: 156,
-      deliveryTime: "20-30 min",
-      distance: "1.5 km",
-      tags: ["Pan artesanal", "Repostería"],
-    },
-    {
-      id: 5,
-      name: "Pizza Italiana",
-      category: "comida_rapida",
-      image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400",
-      rating: 4.6,
-      reviews: 178,
-      deliveryTime: "30-40 min",
-      distance: "2.0 km",
-      tags: ["Pizza", "Italiana"],
-    },
-    {
-      id: 6,
-      name: "El Asadero",
-      category: "restaurante",
-      image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=400",
-      rating: 4.4,
-      reviews: 95,
-      deliveryTime: "35-45 min",
-      distance: "1.8 km",
-      tags: ["Carnes", "Parrilla"],
-    },
-  ];
+  /* =====================  LOAD FROM BACKEND  ===================== */
+  //==========================================================
+
+  useEffect(() => {
+    fetch("/businesses")
+      .then((res) => res.json())
+      .then((data: BusinessBackendDTO[]) => {
+        setBackendBusinesses(data);
+      })
+      .catch(() => {
+        setBackendBusinesses([]);
+      });
+  }, []);
+
+  /* =====================  MAP TO UI  ===================== */
+  //==========================================================
+
+  const negocios: BusinessCard[] = useMemo(
+    () => backendBusinesses.map(mapBusinessToCard),
+    [backendBusinesses],
+  );
+
+  /* =====================  FILTERS  ===================== */
+  //==========================================================
 
   const filteredNegocios = negocios.filter((negocio) => {
-    const matchesSearch = negocio.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === "all" || negocio.category === selectedCategory;
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    const matchesSearch =
+      normalizedSearch === "" ||
+      negocio.name.toLowerCase().includes(normalizedSearch);
+
+    const matchesCategory =
+      selectedCategory === "all" || negocio.category === selectedCategory;
+
     return matchesSearch && matchesCategory;
   });
+
+  const categories: { id: "all" | BusinessesCategory; label: string }[] = [
+    { id: "all", label: "Todos" },
+    { id: "RESTAURANT", label: "Restaurantes" },
+    { id: "FAST_FOOD", label: "Comida Rápida" },
+    { id: "COFFEE", label: "Cafeterías" },
+    { id: "BAKERY", label: "Panaderías" },
+  ];
+
+  /* =====================  FILTERS  ===================== */
+  //==========================================================
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -112,7 +160,10 @@ const NegociosClientePage = () => {
             </p>
           </div>
           <Link to="/registrar-negocio">
-            <Button variant="outline" className="border-accent text-accent hover:bg-accent hover:text-accent-foreground">
+            <Button
+              variant="outline"
+              className="border-accent text-accent hover:bg-accent hover:text-accent-foreground"
+            >
               <Store className="w-4 h-4 mr-2" />
               Registra tu Negocio
             </Button>
@@ -148,10 +199,10 @@ const NegociosClientePage = () => {
               key={category.id}
               variant={selectedCategory === category.id ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedCategory(category.id)}
+              onClick={() => setSelectedCategory(category.id as any)}
               className={
-                selectedCategory === category.id 
-                  ? "bg-accent text-accent-foreground hover:bg-accent/90 shrink-0" 
+                selectedCategory === category.id
+                  ? "bg-accent text-accent-foreground hover:bg-accent/90 shrink-0"
                   : "shrink-0 hover:border-accent hover:text-accent"
               }
             >
@@ -174,16 +225,21 @@ const NegociosClientePage = () => {
               <Card className="overflow-hidden border-border hover:border-accent/50 transition-all hover:-translate-y-1 cursor-pointer group">
                 <div className="relative h-48 overflow-hidden">
                   <img
-                    src={negocio.image}
+                    src={negocio.image ?? ""}
                     alt={negocio.name}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-background/90 via-background/20 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="text-lg font-display font-bold text-foreground mb-2">{negocio.name}</h3>
+                    <h3 className="text-lg font-display font-bold text-foreground mb-2">
+                      {negocio.name}
+                    </h3>
                     <div className="flex gap-2">
                       {negocio.tags.map((tag) => (
-                        <Badge key={tag} className="bg-accent/20 text-accent border-accent/30 text-xs">
+                        <Badge
+                          key={tag}
+                          className="bg-accent/20 text-accent border-accent/30 text-xs"
+                        >
                           {tag}
                         </Badge>
                       ))}
@@ -195,8 +251,12 @@ const NegociosClientePage = () => {
                     <div className="flex items-center gap-4 text-sm">
                       <span className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-emphasis fill-emphasis" />
-                        <span className="text-foreground font-semibold">{negocio.rating}</span>
-                        <span className="text-muted-foreground">({negocio.reviews})</span>
+                        <span className="text-foreground font-semibold">
+                          {negocio.rating}
+                        </span>
+                        <span className="text-muted-foreground">
+                          ({negocio.reviews})
+                        </span>
                       </span>
                       <span className="flex items-center gap-1 text-muted-foreground">
                         <Clock className="w-4 h-4" />
@@ -224,8 +284,12 @@ const NegociosClientePage = () => {
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
             <Store className="w-8 h-8 text-muted-foreground" />
           </div>
-          <p className="text-muted-foreground text-lg">No se encontraron restaurantes</p>
-          <p className="text-sm text-muted-foreground mt-2">Intenta con otra búsqueda o categoría</p>
+          <p className="text-muted-foreground text-lg">
+            No se encontraron restaurantes
+          </p>
+          <p className="text-sm text-muted-foreground mt-2">
+            Intenta con otra búsqueda o categoría
+          </p>
         </motion.div>
       )}
     </div>

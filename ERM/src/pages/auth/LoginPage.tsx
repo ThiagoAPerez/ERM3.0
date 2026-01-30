@@ -15,25 +15,15 @@ import {
 } from "@/components/ui/card";
 
 import { useToast } from "@/hooks/use-toast";
-import { api } from "@/lib/api";
 import { authService } from "@/services/authService";
 
 /* ===================== TYPES ===================== */
 
-export interface ClientMeResponse {
-  user: {
-    id: number;
-    name: string;
-    phone: string;
-    email: string;
-    role: "CLIENT";
-    status: "ACTIVE" | "SUSPENDED";
-  };
-  clientProfile: {
-    name: string;
-    phone: string;
-    profilePhotoUrl: string | null;
-  };
+export type UserRole = "CLIENT" | "ADMIN" | "DELIVERY";
+
+export interface LoginResponse {
+  accessToken: string; // ✅ nombre correcto
+  role: UserRole;
 }
 
 /* ===================== COMPONENT ===================== */
@@ -59,33 +49,40 @@ const LoginPage = () => {
     try {
       setIsLoading(true);
 
-      // Login (guarda token)
-      await authService.login(formData);
+      // 🔐 Login: backend devuelve token + role
+      const authRes: LoginResponse = await authService.login(formData);
 
-      // Obtener identidad REAL
-      const meRes = await api.get<ClientMeResponse>("/client/me");
+      switch (authRes.role) {
+        case "CLIENT":
+          navigate("/dashboard");
+          break;
 
-      // 🔒 SOLO CLIENT permitido aquí
-      if (meRes.data.user.role !== "CLIENT") {
-        localStorage.removeItem("token");
+        case "ADMIN":
+          navigate("/admin");
+          break;
 
-        toast({
-          variant: "destructive",
-          title: "Acceso no permitido",
-          description: "Esta cuenta no es de tipo cliente",
-        });
+        case "DELIVERY":
+          navigate("/domiciliario");
+          break;
 
-        return;
+        default:
+          localStorage.removeItem("token");
+
+          toast({
+            variant: "destructive",
+            title: "Acceso no permitido",
+            description: "Rol de usuario no válido",
+          });
+          return;
       }
 
-      // ✅ CLIENT OK
-      navigate("/dashboard");
-
       toast({
-        title: "Login exitoso",
-        description: "Bienvenido",
+        title: "Login Exitoso",
+        description: "¡Bienvenido de nuevo!",
       });
     } catch (error) {
+      localStorage.removeItem("token");
+
       toast({
         variant: "destructive",
         title: "Error de autenticación",
@@ -95,7 +92,6 @@ const LoginPage = () => {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       {/* Background Effects */}
@@ -147,7 +143,7 @@ const LoginPage = () => {
                     id="identifier"
                     name="identifier"
                     type="text"
-                    placeholder="correo@ejemplo.com o 3001234567"
+                    placeholder="3107214521   o   elrapidin@oriente.com"
                     className="pl-10"
                     value={formData.identifier}
                     onChange={handleChange}
@@ -166,7 +162,7 @@ const LoginPage = () => {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
+                    placeholder="••••••••••••"
                     className="pl-10 pr-10"
                     value={formData.password}
                     onChange={handleChange}
@@ -222,7 +218,9 @@ const LoginPage = () => {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              <span className="text-muted-foreground">¿No tienes cuenta? </span>
+              <span className="text-muted-foreground">
+                ¿No tienes una cuenta?{" "}
+              </span>
               <Link
                 to="/register"
                 className="text-accent hover:underline font-medium"

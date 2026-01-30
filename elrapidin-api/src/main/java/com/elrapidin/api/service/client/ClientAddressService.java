@@ -15,4 +15,6 @@ public interface ClientAddressService {
     void updateAddress(Long userId, Long addressId, UpdateClientAddressRequest request);
 
     void deleteAddress(Long userId, Long addressId);
+
+    void setPrimaryAddress(Long userId, Long addressId);
 }

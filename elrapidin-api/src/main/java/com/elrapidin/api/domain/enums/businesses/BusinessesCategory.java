@@ -5,6 +5,11 @@ public enum BusinessesCategory {
     STORE,
     LICORERA,
     RESTAURANT,
+    FAST_FOOD,
+    COFFEE,
+    BAKERY,
+    SUPERMARKET,
+    PETS,
     MEDICAMENT_STORE,
     OTHER,
     SERVICE

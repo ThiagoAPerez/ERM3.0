@@ -13,7 +13,8 @@ export interface RegisterRequest {
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string; // ✅ nombre correcto
+  role: "CLIENT" | "ADMIN" | "DELIVERY";
 }
 
 export const authService = {
@@ -23,14 +24,19 @@ export const authService = {
       password: data.password,
     });
 
-    localStorage.setItem("token", res.data.token);
+    // ✅ guardar el token REAL
+    localStorage.setItem("token", res.data.accessToken);
+    localStorage.setItem("role", res.data.role);
+
     return res.data;
   },
 
   async register(data: RegisterRequest): Promise<AuthResponse> {
     const res = await api.post<AuthResponse>("/auth/register", data);
 
-    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("token", res.data.accessToken);
+    localStorage.setItem("role", res.data.role);
+
     return res.data;
   },
 };

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Store,
@@ -42,14 +42,16 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
- type BusinessCategory =
+type BusinessCategory =
   | "BUSINESS"
   | "STORE"
   | "LICORERA"
   | "RESTAURANT"
   | "MEDICAMENT_STORE"
   | "OTHER";
+
 type BusinessStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
+
 
 export interface Negocio {
   id: string;
@@ -104,6 +106,12 @@ const NegociosPage = () => {
   const [filterTipo, setFilterTipo] = useState<BusinessCategory | "all">("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingNegocio, setEditingNegocio] = useState<Negocio | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [coverUrl, setCoverUrl] = useState<string | null>(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const coverInputRef = useRef<HTMLInputElement>(null);
 
   // =============================================
   //==================== FORMADATA ===============
@@ -149,6 +157,9 @@ const NegociosPage = () => {
   const handleOpenDialog = (negocio?: Negocio) => {
     if (negocio) {
       setEditingNegocio(negocio);
+      setLogoUrl(negocio.logo ?? null);
+      setCoverUrl(negocio.imagenFondo ?? null);
+
       setFormData({
         nombre: negocio.nombre,
         tipo: negocio.tipo,
@@ -162,6 +173,9 @@ const NegociosPage = () => {
       });
     } else {
       setEditingNegocio(null);
+      setLogoUrl(null);
+      setCoverUrl(null);
+
       setFormData({
         nombre: "",
         tipo: "RESTAURANT" as BusinessCategory,
@@ -191,8 +205,8 @@ const NegociosPage = () => {
         address: formData.direccion,
         municipality: formData.municipio,
         description: formData.descripcion,
-        logoUrl: null,
-        coverUrl: null,
+        logoUrl: logoUrl,
+        coverUrl: coverUrl,
         category: formData.tipo,
       };
 
@@ -289,6 +303,25 @@ const NegociosPage = () => {
       console.error("ERROR SUSPEND BUSINESS", err.response?.data || err);
     }
   };
+
+  //====================================================================
+  // =================== UPLOAD IMAGE   ================================
+
+  async function uploadBusinessImage(
+    businessId: string,
+    file: File,
+    type: "logo" | "cover",
+  ): Promise<{ imageUrl: string }> {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await api.post(
+      `/admin/businesses/${businessId}/${type}`,
+      formData,
+    );
+
+    return res.data;
+  }
 
   //============================================================
   // =================== UI ================================
@@ -564,7 +597,7 @@ const NegociosPage = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
+                    value={formData.email ?? ""}
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
@@ -607,17 +640,103 @@ const NegociosPage = () => {
             </div>
 
             {/* Image Upload Placeholders */}
+            {/* Image Upload Placeholders */}
             <div className="grid grid-cols-2 gap-4">
+              {/* LOGO */}
               <div className="space-y-2">
                 <Label>Logo</Label>
-                <div className="h-24 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer">
-                  Click para subir
+
+                {/* input real */}
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !editingNegocio) return; // 🔒 guard obligatorio
+
+                    try {
+                      setUploadingLogo(true);
+                      const res = await uploadBusinessImage(
+                        editingNegocio.id,
+                        file,
+                        "logo",
+                      );
+                      setLogoUrl(res.imageUrl);
+                    } catch (err) {
+                      console.error("Error subiendo logo", err);
+                    } finally {
+                      setUploadingLogo(false);
+                    }
+                  }}
+                />
+
+                {/* div visual */}
+                <div
+                  className="h-24 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer"
+                  onClick={() => logoInputRef.current?.click()}
+                >
+                  {uploadingLogo ? (
+                    "Subiendo logo..."
+                  ) : logoUrl ? (
+                    <img
+                      src={`http://localhost:9090${logoUrl}`}
+                      alt="Logo"
+                      className="h-full object-contain"
+                    />
+                  ) : (
+                    "Click para subir"
+                  )}
                 </div>
               </div>
+
+              {/* IMAGEN DE FONDO */}
               <div className="space-y-2">
                 <Label>Imagen de Fondo</Label>
-                <div className="h-24 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer">
-                  Click para subir
+
+                {/* input real */}
+                <input
+                  ref={coverInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file || !editingNegocio) return; // 🔒 guard obligatorio
+
+                    try {
+                      setUploadingCover(true);
+                      const res = await uploadBusinessImage(
+                        editingNegocio.id,
+                        file,
+                        "cover",
+                      );
+                      setCoverUrl(res.imageUrl);
+                    } catch (err) {
+                      console.error("Error subiendo imagen de fondo", err);
+                    } finally {
+                      setUploadingCover(false);
+                    }
+                  }}
+                />
+
+                {/* div visual */}
+                <div
+                  className="h-24 border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer"
+                  onClick={() => coverInputRef.current?.click()}
+                >
+                  {uploadingCover ? (
+                    "Subiendo imagen..."
+                  ) : coverUrl ? (
+                    <img
+                      src={`http://localhost:9090${coverUrl}`}
+                      alt="Fondo"
+                      className="h-full object-contain"
+                    />
+                  ) : (
+                    "Click para subir"
+                  )}
                 </div>
               </div>
             </div>

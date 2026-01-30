@@ -11,7 +11,6 @@ import java.util.Date;
 @Service
 public class JwtService {
 
-    // ⚠️ En producción esto va en ENV VAR
     private static final String SECRET_KEY = "EL_RAPIDIN_SUPER_SECRET_KEY_CAMBIAR_EN_PRODUCCION_123456789";
 
     private static final long EXPIRATION_MS = 1000 * 60 * 60 * 24; // 24h
@@ -24,7 +23,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .setSubject(userId.toString())
-                .claim("role", role)
+                .claim("role", role) // ADMIN, CLIENT, DELIVERY, BUSINESS
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_MS))
                 .signWith(getSigningKey())

@@ -76,7 +76,7 @@ const RegisterPage = () => {
         description: "Tu cuenta ha sido creada exitosamente.",
       });
 
-      navigate("/dashboard");
+      navigate("/login");
     } catch (err: any) {
       if (err.response) {
         const status = err.response.status;
@@ -141,7 +141,7 @@ const RegisterPage = () => {
               Crear Cuenta
             </CardTitle>
             <CardDescription>
-              Regístrate para comenzar a usar EL RAPIDÍN
+              Registrar para ingresar a tu cuenta
             </CardDescription>
           </CardHeader>
           <CardContent>

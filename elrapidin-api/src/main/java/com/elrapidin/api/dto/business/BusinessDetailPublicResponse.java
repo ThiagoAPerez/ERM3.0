@@ -8,6 +8,7 @@ public class BusinessDetailPublicResponse {
     private String phone;
     private String address;
     private String municipality;
+    private String category;
     private String logoUrl;
     private String coverUrl;
     private Integer preparationTimeMinutes;
@@ -86,5 +87,13 @@ public class BusinessDetailPublicResponse {
 
     public void setPreparationTimeMinutes(Integer preparationTimeMinutes) {
         this.preparationTimeMinutes = preparationTimeMinutes;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 }

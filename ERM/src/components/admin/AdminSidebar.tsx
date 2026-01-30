@@ -28,11 +28,7 @@ const menuItems = [
     icon: Store,
     href: "/admin/negocios",
   },
-  {
-    title: "Tiendas",
-    icon: ShoppingCart,
-    href: "/admin/tiendas",
-  },
+
   {
     title: "Productos",
     icon: Package,
@@ -71,7 +67,10 @@ const AdminSidebar = () => {
         <div className="flex items-center justify-between">
           <motion.div
             initial={false}
-            animate={{ opacity: collapsed ? 0 : 1, width: collapsed ? 0 : "auto" }}
+            animate={{
+              opacity: collapsed ? 0 : 1,
+              width: collapsed ? 0 : "auto",
+            }}
             className="flex items-center gap-3 overflow-hidden"
           >
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-emphasis flex items-center justify-center font-display font-bold text-emphasis-foreground text-lg shrink-0">
@@ -86,7 +85,7 @@ const AdminSidebar = () => {
               </span>
             </div>
           </motion.div>
-          
+
           {collapsed && (
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-accent to-emphasis flex items-center justify-center font-display font-bold text-emphasis-foreground text-lg mx-auto">
               R
@@ -112,9 +111,10 @@ const AdminSidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
-          const isActive = location.pathname === item.href || 
+          const isActive =
+            location.pathname === item.href ||
             (item.href !== "/admin" && location.pathname.startsWith(item.href));
-          
+
           return (
             <NavLink
               key={item.href}
@@ -123,7 +123,7 @@ const AdminSidebar = () => {
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative",
                 isActive
                   ? "bg-emphasis/10 text-emphasis"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
               {isActive && (
@@ -133,21 +133,23 @@ const AdminSidebar = () => {
                   transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
               )}
-              <item.icon className={cn(
-                "w-5 h-5 shrink-0 transition-colors",
-                isActive ? "text-emphasis" : "group-hover:text-emphasis"
-              )} />
+              <item.icon
+                className={cn(
+                  "w-5 h-5 shrink-0 transition-colors",
+                  isActive ? "text-emphasis" : "group-hover:text-emphasis",
+                )}
+              />
               <motion.span
                 initial={false}
-                animate={{ 
+                animate={{
                   opacity: collapsed ? 0 : 1,
-                  width: collapsed ? 0 : "auto"
+                  width: collapsed ? 0 : "auto",
                 }}
                 className="font-medium whitespace-nowrap overflow-hidden"
               >
                 {item.title}
               </motion.span>
-              
+
               {/* Tooltip for collapsed state */}
               {collapsed && (
                 <div className="absolute left-full ml-2 px-2 py-1 bg-card border border-border rounded-md text-sm font-medium opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50 transition-opacity">
@@ -168,9 +170,9 @@ const AdminSidebar = () => {
           <LogOut className="w-5 h-5 shrink-0" />
           <motion.span
             initial={false}
-            animate={{ 
+            animate={{
               opacity: collapsed ? 0 : 1,
-              width: collapsed ? 0 : "auto"
+              width: collapsed ? 0 : "auto",
             }}
             className="font-medium whitespace-nowrap overflow-hidden"
           >

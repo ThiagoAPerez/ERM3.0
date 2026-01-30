@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,40 +18,122 @@ import {
   Shield,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+import { ClientMeResponse, ClientProfileResponse } from "./UserDashboard";
+
+/* =====================  PERFIL PAGE  ===================== */
+//==========================================================
 
 const PerfilPage = () => {
   const { toast } = useToast();
+
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [formData, setFormData] = useState({
-    name: "Juan Pérez",
-    email: "juan.perez@email.com",
-    phone: "300 123 4567",
-    avatar: null as string | null,
+  // ===================== STATE =====================
+
+  const [email, setEmail] = useState("");
+
+  const [formData, setFormData] = useState<ClientProfileResponse>({
+    name: "",
+    phone: "",
+    profilePhotoUrl: null,
   });
 
+  // ===================== LOAD PROFILE =====================
+
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await api.get("/client/me");
+        const data = res.data as ClientMeResponse;
+
+        setEmail(data.user.email);
+        setFormData({
+          name: data.clientProfile.name,
+          phone: data.clientProfile.phone,
+          profilePhotoUrl: data.clientProfile.profilePhotoUrl,
+        });
+      } catch {
+        toast({
+          title: "Error",
+          description: "No se pudo cargar el perfil",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [toast]);
+
+  // ===================== SAVE PROFILE =====================
+
   const handleSave = async () => {
-    setIsSaving(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    toast({
-      title: "Perfil actualizado",
-      description: "Tus cambios han sido guardados correctamente.",
-    });
-    setIsSaving(false);
-    setIsEditing(false);
+    try {
+      setIsSaving(true);
+
+      if (!formData.name.trim() || !formData.phone.trim()) {
+        toast({
+          title: "Datos inválidos",
+          description: "Nombre y teléfono son obligatorios",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      await api.put("/client/profile", {
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        profilePhotoUrl: formData.profilePhotoUrl,
+      });
+
+      toast({
+        title: "Perfil actualizado",
+        description: "Tus cambios han sido guardados correctamente.",
+      });
+
+      setIsEditing(false);
+    } catch {
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el perfil",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
+
+  // ===================== IMAGE UPLOAD =====================
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData({ ...formData, avatar: reader.result as string });
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setFormData((prev) => ({
+        ...prev,
+        profilePhotoUrl: reader.result as string,
+      }));
+    };
+    reader.readAsDataURL(file);
   };
+
+  // ===================== LOADING =====================
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-2xl">
+        <p className="text-muted-foreground">Cargando perfil...</p>
+      </div>
+    );
+  }
+
+  // ===================== QUICK LINKS =====================
 
   const quickLinks = [
     {
@@ -68,6 +150,8 @@ const PerfilPage = () => {
     },
   ];
 
+  // ===================== RENDER =====================
+
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
       <motion.div
@@ -83,7 +167,6 @@ const PerfilPage = () => {
         </p>
       </motion.div>
 
-      {/* Profile Card */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -100,16 +183,17 @@ const PerfilPage = () => {
               {isEditing ? "Cancelar" : "Editar"}
             </Button>
           </CardHeader>
+
           <CardContent className="space-y-6">
-            {/* Avatar */}
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="w-24 h-24">
-                  <AvatarImage src={formData.avatar || undefined} />
+                  <AvatarImage src={formData.profilePhotoUrl || undefined} />
                   <AvatarFallback className="text-2xl bg-accent/20 text-accent">
                     {formData.name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
+
                 {isEditing && (
                   <label className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-accent text-accent-foreground flex items-center justify-center cursor-pointer hover:bg-accent/90 transition-colors">
                     <Camera className="w-4 h-4" />
@@ -122,17 +206,17 @@ const PerfilPage = () => {
                   </label>
                 )}
               </div>
+
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
                   {formData.name}
                 </h3>
-                <p className="text-sm text-muted-foreground">{formData.email}</p>
+                <p className="text-sm text-muted-foreground">{email}</p>
               </div>
             </div>
 
             <Separator />
 
-            {/* Form Fields */}
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Nombre completo</Label>
@@ -143,7 +227,10 @@ const PerfilPage = () => {
                     className="pl-10"
                     value={formData.name}
                     onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
+                      setFormData((prev) => ({
+                        ...prev,
+                        name: e.target.value,
+                      }))
                     }
                     disabled={!isEditing}
                   />
@@ -158,11 +245,8 @@ const PerfilPage = () => {
                     id="email"
                     type="email"
                     className="pl-10"
-                    value={formData.email}
-                    onChange={(e) =>
-                      setFormData({ ...formData, email: e.target.value })
-                    }
-                    disabled={!isEditing}
+                    value={email}
+                    disabled
                   />
                 </div>
               </div>
@@ -177,7 +261,10 @@ const PerfilPage = () => {
                     className="pl-10"
                     value={formData.phone}
                     onChange={(e) =>
-                      setFormData({ ...formData, phone: e.target.value })
+                      setFormData((prev) => ({
+                        ...prev,
+                        phone: e.target.value,
+                      }))
                     }
                     disabled={!isEditing}
                   />
@@ -208,7 +295,6 @@ const PerfilPage = () => {
           </CardContent>
         </Card>
 
-        {/* Quick Links */}
         <Card className="glass border-border/50">
           <CardHeader>
             <CardTitle>Configuración</CardTitle>
@@ -225,7 +311,9 @@ const PerfilPage = () => {
                       <link.icon className="w-5 h-5 text-accent" />
                     </div>
                     <div>
-                      <p className="font-medium text-foreground">{link.title}</p>
+                      <p className="font-medium text-foreground">
+                        {link.title}
+                      </p>
                       <p className="text-sm text-muted-foreground">
                         {link.description}
                       </p>

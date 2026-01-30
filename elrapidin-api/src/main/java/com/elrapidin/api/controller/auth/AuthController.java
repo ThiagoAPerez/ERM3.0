@@ -4,6 +4,7 @@ import com.elrapidin.api.dto.auth.AuthResponse;
 import com.elrapidin.api.dto.auth.LoginRequest;
 import com.elrapidin.api.dto.auth.RegisterRequest;
 import com.elrapidin.api.service.AuthService;
+import com.elrapidin.api.domain.enums.user.UserRole;
 import jakarta.validation.Valid;
 
 import java.util.Map;
@@ -24,7 +25,7 @@ public class AuthController {
     @PostMapping("/register")
     public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
         System.out.println(">>> REGISTER CONTROLLER ENTRÓ <<<");
-        return new AuthResponse(authService.register(request));
+        return authService.register(request);
     }
 
     // public AuthResponse register(@Valid @RequestBody RegisterRequest request) {
@@ -32,8 +33,10 @@ public class AuthController {
     //
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(Map.of("token", token));
+    public ResponseEntity<AuthResponse> login(
+            @Valid @RequestBody LoginRequest request) {
+
+        return ResponseEntity.ok(authService.login(request));
     }
+
 }

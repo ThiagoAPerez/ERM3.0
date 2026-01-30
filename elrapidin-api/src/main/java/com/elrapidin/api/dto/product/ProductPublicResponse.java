@@ -3,6 +3,8 @@ package com.elrapidin.api.dto.product;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.elrapidin.api.domain.enums.product.ProductCategory;
+
 public class ProductPublicResponse {
 
     private Long id;
@@ -13,6 +15,7 @@ public class ProductPublicResponse {
     private String imageUrl;
     private boolean available;
     private LocalDateTime createdAt;
+    private ProductCategory category;
 
     public ProductPublicResponse(
             Long id,
@@ -22,7 +25,8 @@ public class ProductPublicResponse {
             String currency,
             String imageUrl,
             boolean available,
-            LocalDateTime createdAt) {
+            LocalDateTime createdAt,
+            ProductCategory category) {
         this.id = id;
         this.name = name;
         this.description = description;
@@ -31,6 +35,7 @@ public class ProductPublicResponse {
         this.imageUrl = imageUrl;
         this.available = available;
         this.createdAt = createdAt;
+        this.category = category;
     }
 
     public Long getId() {
@@ -64,4 +69,47 @@ public class ProductPublicResponse {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setPrice(BigDecimal price) {
+        this.price = price;
+    }
+
+    public void setCurrency(String currency) {
+        this.currency = currency;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public void setAvailable(boolean available) {
+        this.available = available;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public ProductCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(ProductCategory category) {
+        this.category = category;
+    }
+
+   
+
 }

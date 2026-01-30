@@ -29,11 +29,13 @@ public class ClientAddressServiceImpl implements ClientAddressService {
                 this.clientAddressRepository = clientAddressRepository;
         }
 
+        // Obtiene las direcciones activas del cliente
+
         @Override
         @Transactional(readOnly = true)
         public List<ClientAddressResponse> getMyAddresses(Long userId) {
 
-                ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+                ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
                 return clientAddressRepository
@@ -45,14 +47,16 @@ public class ClientAddressServiceImpl implements ClientAddressService {
                                                 a.getAddress(),
                                                 a.getNeighborhood(),
                                                 a.getReferencePoint(),
-                                                a.getAddressType()))
+                                                a.getAddressType(),
+                                                a.isPrimaryAddress()))
                                 .toList();
         }
 
+        // Creación de una nueva dirección
         @Override
         public void createAddress(Long userId, CreateClientAddressRequest request) {
 
-                ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+                ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
                 ClientAddressEntity address = new ClientAddressEntity();
@@ -67,10 +71,12 @@ public class ClientAddressServiceImpl implements ClientAddressService {
                 clientAddressRepository.save(address);
         }
 
+        // Actualización de la dirección
+
         @Override
         public void updateAddress(Long userId, Long addressId, UpdateClientAddressRequest request) {
 
-                ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+                ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
                 ClientAddressEntity address = clientAddressRepository
@@ -83,11 +89,12 @@ public class ClientAddressServiceImpl implements ClientAddressService {
                 address.setReferencePoint(request.referencePoint());
                 address.setAddressType(request.addressType());
         }
+        // Eliminación lógica de la dirección
 
         @Override
         public void deleteAddress(Long userId, Long addressId) {
 
-                ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+                ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
                 ClientAddressEntity address = clientAddressRepository
@@ -96,4 +103,24 @@ public class ClientAddressServiceImpl implements ClientAddressService {
 
                 address.setStatus(AddressStatus.DELETED);
         }
+
+        // Establecer dirección primaria
+        @Override
+        @Transactional
+        public void setPrimaryAddress(Long userId, Long addressId) {
+
+                ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
+                                .orElseThrow(() -> new NotFoundException("Client profile not found"));
+
+                // 1. Quitar primary a todas
+                clientAddressRepository.clearPrimary(profile.getId());
+
+                // 2. Activar la nueva
+                ClientAddressEntity address = clientAddressRepository
+                                .findByIdAndClientProfile_Id(addressId, profile.getId())
+                                .orElseThrow(() -> new NotFoundException("Address not found"));
+
+                address.setPrimaryAddress(true);
+        }
+
 }

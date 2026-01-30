@@ -27,8 +27,7 @@ public class ClientServiceImpl implements ClientService {
     public ClientServiceImpl(
             UserRepository userRepository,
             ClientProfileRepository clientProfileRepository,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.clientProfileRepository = clientProfileRepository;
         this.passwordEncoder = passwordEncoder;
@@ -49,7 +48,7 @@ public class ClientServiceImpl implements ClientService {
             throw new IllegalStateException("User is not a client");
         }
 
-        ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+        ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
         return new ClientMeResponse(
@@ -59,14 +58,13 @@ public class ClientServiceImpl implements ClientService {
                         user.getPhone(),
                         user.getEmail(),
                         user.getRole(),
-                        user.getStatus()
-                ),
+                        user.getStatus()),
                 new ClientProfileResponse(
                         profile.getName(),
                         profile.getPhone(),
                         profile.getProfilePhotoUrl()
-                )
-        );
+
+                ));
     }
 
     // =====================================================
@@ -76,7 +74,7 @@ public class ClientServiceImpl implements ClientService {
     @Override
     public void updateProfile(Long userId, UpdateClientProfileRequest request) {
 
-        ClientProfileEntity profile = clientProfileRepository.findByUserId(userId)
+        ClientProfileEntity profile = clientProfileRepository.findByUser_Id(userId)
                 .orElseThrow(() -> new NotFoundException("Client profile not found"));
 
         profile.setName(request.name());

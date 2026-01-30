@@ -4,6 +4,7 @@ import com.elrapidin.api.dto.client.ChangePasswordRequest;
 import com.elrapidin.api.dto.client.ClientMeResponse;
 import com.elrapidin.api.dto.client.UpdateClientProfileRequest;
 import com.elrapidin.api.security.AuthenticatedUser;
+import com.elrapidin.api.service.client.ClientAddressServiceImpl;
 import com.elrapidin.api.service.client.ClientService;
 
 import jakarta.validation.Valid;
@@ -15,10 +16,17 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/client")
 public class ClientController {
 
+    private final ClientAddressServiceImpl clientAddressServiceImpl;
+
+    private Long getUserId(Authentication authentication) {
+        return ((AuthenticatedUser) authentication.getPrincipal()).getUserId();
+    }
+
     private final ClientService clientService;
 
-    public ClientController(ClientService clientService) {
+    public ClientController(ClientService clientService, ClientAddressServiceImpl clientAddressServiceImpl) {
         this.clientService = clientService;
+        this.clientAddressServiceImpl = clientAddressServiceImpl;
     }
 
     // =====================================================
@@ -27,10 +35,7 @@ public class ClientController {
 
     @GetMapping("/me")
     public ClientMeResponse me(Authentication authentication) {
-
-        AuthenticatedUser authUser = (AuthenticatedUser) authentication.getPrincipal();
-
-        return clientService.getClientMe(authUser.getUserId());
+        return clientService.getClientMe(getUserId(authentication));
     }
 
     // =====================================================
@@ -41,8 +46,10 @@ public class ClientController {
     public void updateProfile(
             Authentication authentication,
             @Valid @RequestBody UpdateClientProfileRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
-        clientService.updateProfile(userId, request);
+
+        AuthenticatedUser user = (AuthenticatedUser) authentication.getPrincipal();
+
+        clientService.updateProfile(user.getUserId(), request);
     }
 
     // =====================================================
@@ -53,8 +60,7 @@ public class ClientController {
     public void changePassword(
             Authentication authentication,
             @Valid @RequestBody ChangePasswordRequest request) {
-        Long userId = (Long) authentication.getPrincipal();
-        clientService.changePassword(userId, request);
+        clientService.changePassword(getUserId(authentication), request);
     }
 
     // =====================================================
@@ -67,4 +73,9 @@ public class ClientController {
         // el frontend solo debe eliminar el token.
         // Endpoint dejado por consistencia / futuro blacklist.
     }
+
+    // =====================================================
+    // ====== Gestión de direcciones del cliente ==========
+    // =====================================================
+
 }
