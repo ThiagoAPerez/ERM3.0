@@ -52,7 +52,6 @@ type BusinessCategory =
 
 type BusinessStatus = "ACTIVE" | "INACTIVE" | "SUSPENDED";
 
-
 export interface Negocio {
   id: string;
   nombre: string;
@@ -69,16 +68,7 @@ export interface Negocio {
   descripcion?: string;
 }
 /* ===================== UI CONSTANTS (INTOCABLES) ===================== */
-const municipios = [
-  "Marinilla",
-  "El Retiro",
-  "La Ceja",
-  "Rionegro",
-  "El Carmen de Viboral",
-  "Guarne",
-  "El Santuario",
-  "San Vicente",
-];
+const municipios = ["Marinilla", "Rionegro", "El Carmen de Viboral"];
 
 const tipoLabels: Record<BusinessCategory, string> = {
   BUSINESS: "Negocio",
@@ -458,7 +448,7 @@ const NegociosPage = () => {
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="w-4 h-4" />
                   <span className="truncate">
-                    {negocio.direccion}, {negocio.municipio}
+                    {negocio.direccion} {negocio.municipio}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
