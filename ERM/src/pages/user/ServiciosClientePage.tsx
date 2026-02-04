@@ -2,7 +2,16 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Store, ShoppingBag, Package, Truck, ArrowRight, Clock, Shield, MapPin } from "lucide-react";
+import {
+  Store,
+  ShoppingBag,
+  Package,
+  Truck,
+  ArrowRight,
+  Clock,
+  Shield,
+  MapPin,
+} from "lucide-react";
 
 const ServiciosClientePage = () => {
   const services = [
@@ -10,8 +19,13 @@ const ServiciosClientePage = () => {
       id: "restaurantes",
       icon: Store,
       title: "Restaurantes",
-      description: "Pide comida de tus restaurantes favoritos con entrega rápida",
-      features: ["Variedad de opciones", "Entrega caliente", "Seguimiento en vivo"],
+      description:
+        "Pide comida de tus restaurantes favoritos con entrega rápida  en minutos",
+      features: [
+        "Variedad de opciones",
+        "Entrega caliente",
+        "Seguimiento en vivo",
+      ],
       color: "from-accent to-emphasis",
       bgColor: "bg-accent/10",
       href: "/negocios",
@@ -20,7 +34,8 @@ const ServiciosClientePage = () => {
       id: "tiendas",
       icon: ShoppingBag,
       title: "Tiendas",
-      description: "Compra en supermercados, farmacias y más sin salir de casa",
+      description:
+        "Compra en supermercados, licoreras, carnicerias, farmacias y más sin salir de casa",
       features: ["Productos frescos", "Compras seguras", "Entrega a domicilio"],
       color: "from-blue-500 to-cyan-500",
       bgColor: "bg-blue-500/10",
@@ -29,19 +44,27 @@ const ServiciosClientePage = () => {
     {
       id: "paqueteria",
       icon: Package,
-      title: "Mensajería",
+      title: "Un  Rapidin ?",
       description: "Envío de paquetes de un punto a otro de forma segura",
-      features: ["Recogida a domicilio", "Seguimiento en tiempo real", "Seguro incluido"],
+      features: [
+        "Recogida a domicilio",
+        "Seguimiento en tiempo real",
+        "Pagos Contraentrega",
+      ],
       color: "from-green-500 to-emerald-500",
       bgColor: "bg-green-500/10",
       href: "/servicios/paqueteria",
     },
     {
-      id: "motocarguero",
+      id: "motoarguero",
       icon: Truck,
-      title: "Motocarguero",
+      title: "Moto Carguero",
       description: "Transporte de carga mediana con moto adaptada",
-      features: ["Hasta 50kg de carga", "Precios competitivos", "Cobertura amplia"],
+      features: [
+        "Hasta 300kg de carga",
+        "Precios favorables",
+        "Cobertura Oriente Antioqueño",
+      ],
       color: "from-purple-500 to-pink-500",
       bgColor: "bg-purple-500/10",
       href: "/servicios/motocarguero",
@@ -51,18 +74,18 @@ const ServiciosClientePage = () => {
   const benefits = [
     {
       icon: Clock,
-      title: "Entregas Rápidas",
-      description: "Recibe tus pedidos en minutos, no horas",
+      title: "Entregas en un Rapidin",
+      description: "Recibe tus pedidos en  el tiempo estimado!",
     },
     {
       icon: Shield,
-      title: "100% Seguro",
-      description: "Tus productos llegan en perfectas condiciones",
+      title: "Seguro y Confiable",
+      description: "Tus productos llegan en perfectas condiciones.",
     },
     {
       icon: MapPin,
-      title: "Cobertura Total",
-      description: "Llegamos a toda la región del Oriente Antioqueño",
+      title: "Oriente Antioqueño",
+      description: "Llegamos tanto a Zona Rural como Urbana.",
     },
   ];
 
@@ -78,7 +101,8 @@ const ServiciosClientePage = () => {
           Nuestros Servicios
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-          Todo lo que necesitas, a un clic de distancia. Elige el servicio que más se adapte a tus necesidades.
+          Todo lo que necesitas, a un clic de distancia. Elige el servicio que
+          más se adapte a tus necesidades.
         </p>
       </motion.div>
 
@@ -96,8 +120,12 @@ const ServiciosClientePage = () => {
                 <benefit.icon className="w-6 h-6 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">{benefit.description}</p>
+                <h3 className="font-semibold text-foreground">
+                  {benefit.title}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {benefit.description}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -117,7 +145,9 @@ const ServiciosClientePage = () => {
               <Card className="glass border-border/50 hover:border-accent/50 transition-all duration-300 group overflow-hidden h-full">
                 <CardContent className="p-6">
                   <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center flex-shrink-0`}>
+                    <div
+                      className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${service.color} flex items-center justify-center flex-shrink-0`}
+                    >
                       <service.icon className="w-7 h-7 text-white" />
                     </div>
                     <div className="flex-1">
@@ -132,7 +162,10 @@ const ServiciosClientePage = () => {
 
                   <ul className="space-y-2 mb-6">
                     {service.features.map((feature) => (
-                      <li key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <li
+                        key={feature}
+                        className="flex items-center gap-2 text-sm text-muted-foreground"
+                      >
                         <div className="w-1.5 h-1.5 rounded-full bg-accent" />
                         {feature}
                       </li>

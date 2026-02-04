@@ -13,15 +13,13 @@ import { Search, Star, Clock, MapPin, Filter, Store } from "lucide-react";
 
 type BusinessesCategory =
   | "BUSINESS"
-  | "STORE"
-  | "LICORERA"
+  | "CHINA"
   | "RESTAURANT"
   | "FAST_FOOD"
+  | "CHICKEN"
   | "COFFEE"
-  | "BAKERY"
-  | "SUPERMARKET"
-  | "PETS"
-  | "MEDICAMENT_STORE"
+  | "PIZZA"
+  | "HAMBURGERS"
   | "OTHER"
   | "SERVICE";
 
@@ -133,12 +131,12 @@ const NegociosClientePage = () => {
   });
 
   const categories: { id: "all" | BusinessesCategory; label: string }[] = [
-    { id: "all", label: "Todos" },
-    { id: "RESTAURANT", label: "Restaurantes" },
-    { id: "MEDICAMENT_STORE", label: "Farmacias" },
-    { id: "LICORERA", label: "Licorerías" },
-    { id: "BAKERY", label: "Panaderías" },
+    { id: "all", label: "Restaurantes" },
+    { id: "HAMBURGERS", label: "Hamburguesas" },
+    { id: "CHINA", label: "Comida China" },
     { id: "FAST_FOOD", label: "Comida Rápida" },
+    { id: "CHICKEN", label: "Pollo" },
+    { id: "PIZZA", label: "Pizzas" },
     { id: "OTHER", label: "Otros" },
   ];
 
@@ -156,7 +154,7 @@ const NegociosClientePage = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-3xl font-display font-bold text-foreground mb-2">
-              Negocios
+              Restaurantes
             </h1>
             <p className="text-muted-foreground">
               Tu solo antojate y nosotros nos encargamos del resto.

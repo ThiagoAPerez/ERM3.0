@@ -22,11 +22,7 @@ import { api } from "@/lib/api";
 
 /* ===================== TYPES ===================== */
 
-export type DeliveryZone =
-  | "MARINILLA"
-  | "RIONEGRO"
-  | "EL_CARMEN"
-  | "NOASIGNADO";
+export type DeliveryZone = "MARINILLA" | "RIONEGRO" | "EL_CARMEN";
 
 export interface ClientMeResponse {
   user: {
@@ -54,7 +50,7 @@ const UserHeader = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { label: "Negocios", href: "/negocios" },
+    { label: "Restaurantes", href: "/negocios" },
     { label: "Tiendas", href: "/tiendas" },
     { label: "Servicios", href: "/servicios" },
     { label: "Pedidos", href: "/pedidos" },
@@ -76,7 +72,6 @@ const UserHeader = () => {
     MARINILLA: "Marinilla",
     RIONEGRO: "Rionegro",
     EL_CARMEN: "El Carmen de Viboral",
-    NOASIGNADO: "",
   };
 
   /* ===================== LOAD CLIENT ===================== */

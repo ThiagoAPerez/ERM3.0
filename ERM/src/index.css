@@ -10,7 +10,7 @@
 @layer base {
   :root {
     /* Core Brand Colors - Dark Theme Primary */
-    --background: 0 0% 4%;
+    --background: 0 0% 10%;
     --foreground: 0 0% 98%;
 
     --card: 0 0% 7%;

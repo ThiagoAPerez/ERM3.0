@@ -12,5 +12,13 @@ public enum BusinessesCategory {
     PETS,
     MEDICAMENT_STORE,
     OTHER,
+    CHINA,
+    CHICKEN,
+    PIZZA,
+    HAMBURGERS,
+    LEGUMBRERIA,
+    CARNICERIA,
+    FERRETERIAS,
+    ELECTRODOMESTICOS,
     SERVICE
 }
