@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+
+//========================================================
+// ===================== TYPES ========================
+//========================================================
+
+type BackendAddressType = "CASA" | "TRABAJO" | "OTRO";
+
+interface BackendAddress {
+  id: number;
+  name: string;
+  address: string;
+  neighborhood: string;
+  referencePoint?: string;
+  addressType: BackendAddressType;
+  isPrimary: boolean;
+}
 
 interface Address {
   id: string;
@@ -38,35 +55,52 @@ interface Address {
   city: string;
   reference: string;
   isPrimary: boolean;
-  type: "home" | "work" | "other";
+  type: BackendAddressType;
 }
+
+//========================================================
+// ===================== MAPPERS ========================
+//========================================================
+
+const mapBackendToFrontend = (a: BackendAddress): Address => ({
+  id: String(a.id),
+  name: a.name,
+  address: a.address,
+  city: a.neighborhood,
+  reference: a.referencePoint ?? "",
+  isPrimary: a.isPrimary,
+  type: a.addressType,
+});
+
+const mapFrontendToBackend = (f: {
+  name: string;
+  address: string;
+  city: string;
+  reference: string;
+  type: "home" | "work" | "other";
+}) => ({
+  name: f.name,
+  address: f.address,
+  neighborhood: f.city,
+  referencePoint: f.reference,
+  addressType:
+    f.type === "home" ? "CASA" : f.type === "work" ? "TRABAJO" : "OTRO",
+});
+
+//========================================================
+// ===================== COMPONENT ========================
+//========================================================
 
 const DireccionesPage = () => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
 
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: "1",
-      name: "Casa",
-      address: "Cra 45 #23-12",
-      city: "Barrio Centro",
-      reference: "Edificio azul, apartamento 302",
-      isPrimary: true,
-      type: "home",
-    },
-    {
-      id: "2",
-      name: "Oficina",
-      address: "Av Principal #100-50",
-      city: "Ed. Torre A, Piso 5",
-      reference: "Al lado del banco",
-      isPrimary: false,
-      type: "work",
-    },
-  ]);
+  //========================================================
+  // ===================== FORMDATA ========================
+  //========================================================
 
+  const [addresses, setAddresses] = useState<Address[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     address: "",
@@ -75,39 +109,49 @@ const DireccionesPage = () => {
     type: "home" as "home" | "work" | "other",
   });
 
+  //========================================================
+  // ===================== USEEFFECT ========================
+  //========================================================
+
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  const loadAddresses = async () => {
+    const { data } = await api.get<BackendAddress[]>("/client/addresses");
+    setAddresses(data.map(mapBackendToFrontend));
+  };
+
+  //========================================================
+  // ===================== HELPERS ICONS ========================
+  //========================================================
+
   const getIcon = (type: string) => {
     switch (type) {
-      case "home":
+      case "HOME":
         return Home;
-      case "work":
+      case "TRABAJO":
         return Building;
       default:
         return MapPin;
     }
   };
 
-  const handleSave = () => {
+  //========================================================
+  // ===================== GUARDAR DIRECCION ==============
+  //========================================================
+  const handleSave = async () => {
     if (editingAddress) {
-      // Update existing
-      setAddresses(
-        addresses.map((a) =>
-          a.id === editingAddress.id
-            ? { ...a, ...formData }
-            : a
-        )
+      await api.put(
+        `/client/addresses/${editingAddress.id}`,
+        mapFrontendToBackend(formData),
       );
       toast({
         title: "Dirección actualizada",
         description: "Los cambios han sido guardados.",
       });
     } else {
-      // Create new
-      const newAddress: Address = {
-        id: Date.now().toString(),
-        ...formData,
-        isPrimary: addresses.length === 0,
-      };
-      setAddresses([...addresses, newAddress]);
+      await api.post("/client/addresses", mapFrontendToBackend(formData));
       toast({
         title: "Dirección agregada",
         description: "La nueva dirección ha sido guardada.",
@@ -123,7 +167,12 @@ const DireccionesPage = () => {
       reference: "",
       type: "home",
     });
+    loadAddresses();
   };
+
+  //========================================================
+  // ===================== EDITAR DIRECCION ================
+  //========================================================
 
   const handleEdit = (address: Address) => {
     setEditingAddress(address);
@@ -132,31 +181,47 @@ const DireccionesPage = () => {
       address: address.address,
       city: address.city,
       reference: address.reference,
-      type: address.type,
+      type:
+        address.type === "CASA"
+          ? "home"
+          : address.type === "TRABAJO"
+            ? "work"
+            : "other",
     });
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    setAddresses(addresses.filter((a) => a.id !== id));
+  //========================================================
+  // ===================== ELIMINAR LOGICA =================
+  //========================================================
+
+  const handleDelete = async (id: string) => {
+    await api.delete(`/client/addresses/${id}`);
     toast({
       title: "Dirección eliminada",
       description: "La dirección ha sido eliminada.",
     });
+    loadAddresses();
   };
 
-  const handleSetPrimary = (id: string) => {
-    setAddresses(
-      addresses.map((a) => ({
-        ...a,
-        isPrimary: a.id === id,
-      }))
-    );
+  //========================================================
+  // ===================== SET PRIMARY =====================
+  //========================================================
+
+  const handleSetPrimary = async (id: string) => {
+    await api.patch(`/client/addresses/${id}/primary`);
+
     toast({
       title: "Dirección principal actualizada",
       description: "Esta dirección será usada por defecto.",
     });
+
+    loadAddresses(); // recargar desde backend
   };
+
+  //========================================================
+  // ===================== INTERFACE JSX =====================
+  //========================================================
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-2xl">
@@ -265,7 +330,9 @@ const DireccionesPage = () => {
                     <Button
                       key={type.id}
                       type="button"
-                      variant={formData.type === type.id ? "default" : "outline"}
+                      variant={
+                        formData.type === type.id ? "default" : "outline"
+                      }
                       size="sm"
                       onClick={() =>
                         setFormData({
@@ -342,7 +409,9 @@ const DireccionesPage = () => {
                             </Badge>
                           )}
                         </div>
-                        <p className="text-sm text-foreground">{address.address}</p>
+                        <p className="text-sm text-foreground">
+                          {address.address}
+                        </p>
                         <p className="text-sm text-muted-foreground">
                           {address.city}
                         </p>
@@ -399,10 +468,7 @@ const DireccionesPage = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Agrega una dirección para hacer tus pedidos más rápido
               </p>
-              <Button
-                variant="hero"
-                onClick={() => setIsDialogOpen(true)}
-              >
+              <Button variant="hero" onClick={() => setIsDialogOpen(true)}>
                 <Plus className="w-4 h-4 mr-2" />
                 Agregar Dirección
               </Button>

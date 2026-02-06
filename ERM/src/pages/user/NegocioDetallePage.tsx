@@ -1,205 +1,236 @@
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ArrowLeft, 
-  Star, 
-  Clock, 
-  MapPin, 
-  Plus, 
+import {
+  ArrowLeft,
+  Clock,
+  Plus,
   Minus,
   ShoppingBag,
-  Heart
+  Heart,
+  Star,
+  MapPin,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api } from "@/lib/api";
+
+/* ===================== TYPES ===================== */
+
+interface BusinessDetailPublicResponse {
+  id: number;
+  name: string;
+  description: string;
+  municipality: string;
+  category: string;
+  logoUrl: string | null;
+  coverUrl: string | null;
+  preparationTimeMinutes: number;
+}
+
+interface IngredientPublicResponse {
+  id: number;
+  name: string;
+  extraPrice: number;
+}
+
+interface ProductWithIngredientsPublicResponse {
+  id: number;
+  name: string;
+  description: string;
+  price: number;
+  currency: string;
+  imageUrl: string | null;
+  available: boolean;
+  category: string;
+  ingredients: IngredientPublicResponse[];
+}
+
+/* ===================== LABELS ===================== */
+
+const CATEGORY_LABELS: Record<string, string> = {
+  FOOD: "Comida",
+  DRINK: "Bebidas",
+  DESSERT: "Postres",
+};
+
+//===================== CONSTANTS ===================== //
+
+const FILES_BASE_URL = "http://localhost:9090";
+
+/* ===================== PAGE ===================== */
 
 const NegocioDetallePage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [carrito, setCarrito] = useState<{ [key: number]: number }>({});
-  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<{ [key: number]: string[] }>({});
 
-  // Mock business data
-  const negocio = {
-    id: id || "1",
-    nombre: "La Burger House",
-    descripcion: "Las mejores hamburguesas artesanales de la ciudad. Preparadas con ingredientes frescos y recetas únicas que te harán volver por más.",
-    imagen: "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=800",
-    rating: 4.8,
-    reviews: 234,
-    tiempoEntrega: "25-35 min",
-    distancia: "1.2 km",
-    categorias: ["Hamburguesas", "Americana", "Fast Food"],
-    horario: "11:00 AM - 10:00 PM",
-  };
+  const [business, setBusiness] = useState<BusinessDetailPublicResponse | null>(
+    null,
+  );
 
-  const categorias = [
-    {
-      nombre: "Hamburguesas Clásicas",
-      productos: [
-        {
-          id: 1,
-          nombre: "Burger Clásica",
-          descripcion: "Carne 100% res, queso americano, lechuga, tomate y salsa especial",
-          precio: 18000,
-          imagen: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400",
-          ingredientes: ["Queso extra", "Tocino", "Cebolla caramelizada", "Jalapeños", "Huevo frito"],
-        },
-        {
-          id: 2,
-          nombre: "Doble Carne",
-          descripcion: "Doble carne de res, doble queso, lechuga, tomate y salsa BBQ",
-          precio: 25000,
-          imagen: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?w=400",
-          ingredientes: ["Queso extra", "Tocino", "Cebolla caramelizada", "Jalapeños", "Huevo frito"],
-        },
-        {
-          id: 3,
-          nombre: "Burger BBQ",
-          descripcion: "Carne de res, tocino crujiente, aros de cebolla y salsa BBQ ahumada",
-          precio: 22000,
-          imagen: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?w=400",
-          ingredientes: ["Queso extra", "Tocino extra", "Cebolla caramelizada", "Jalapeños"],
-        },
-      ],
-    },
-    {
-      nombre: "Hamburguesas Premium",
-      productos: [
-        {
-          id: 4,
-          nombre: "Burger Gourmet",
-          descripcion: "Carne angus, queso brie, rúcula, cebolla caramelizada y reducción de vino",
-          precio: 32000,
-          imagen: "https://images.unsplash.com/photo-1586190848861-99aa4a171e90?w=400",
-          ingredientes: ["Trufa", "Foie gras", "Queso azul", "Champiñones salteados"],
-        },
-        {
-          id: 5,
-          nombre: "Burger Tex-Mex",
-          descripcion: "Carne de res, guacamole, pico de gallo, jalapeños y crema ácida",
-          precio: 26000,
-          imagen: "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?w=400",
-          ingredientes: ["Queso cheddar extra", "Nachos", "Frijoles negros", "Chorizo"],
-        },
-      ],
-    },
-    {
-      nombre: "Acompañamientos",
-      productos: [
-        {
-          id: 6,
-          nombre: "Papas Fritas",
-          descripcion: "Papas crujientes con sal marina y salsa de la casa",
-          precio: 8000,
-          imagen: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=400",
-          ingredientes: ["Queso cheddar", "Tocino bits", "Cebollín"],
-        },
-        {
-          id: 7,
-          nombre: "Aros de Cebolla",
-          descripcion: "Aros de cebolla empanizados con salsa ranch",
-          precio: 10000,
-          imagen: "https://images.unsplash.com/photo-1639024471283-03518883512d?w=400",
-          ingredientes: ["Salsa BBQ", "Salsa buffalo"],
-        },
-      ],
-    },
-    {
-      nombre: "Bebidas",
-      productos: [
-        {
-          id: 8,
-          nombre: "Malteada Clásica",
-          descripcion: "Malteada cremosa disponible en chocolate, vainilla o fresa",
-          precio: 12000,
-          imagen: "https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=400",
-          ingredientes: ["Chispas de chocolate", "Crema batida extra", "Cereza"],
-        },
-        {
-          id: 9,
-          nombre: "Limonada Natural",
-          descripcion: "Limonada fresca preparada al momento",
-          precio: 6000,
-          imagen: "https://images.unsplash.com/photo-1621263764928-df1444c5e859?w=400",
-          ingredientes: ["Hierbabuena", "Jengibre"],
-        },
-      ],
-    },
-  ];
+  const [products, setProducts] = useState<
+    ProductWithIngredientsPublicResponse[]
+  >([]);
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("es-CO", {
+  const [loading, setLoading] = useState(true);
+
+  const [carrito, setCarrito] = useState<Record<number, number>>({});
+  const [ingredientesSeleccionados, setIngredientesSeleccionados] = useState<
+    Record<number, number[]>
+  >({});
+
+  /* ================= FETCH ================= */
+
+  useEffect(() => {
+    if (!id) return;
+    const businessId = Number(id);
+
+    const fetchAll = async () => {
+      try {
+        const bRes = await api.get<BusinessDetailPublicResponse>(
+          `/businesses/${businessId}`,
+        );
+        setBusiness(bRes.data);
+
+        const pRes = await api.get<ProductWithIngredientsPublicResponse[]>(
+          `/businesses/${businessId}/products?providerType=BUSINESS`,
+        );
+
+        setProducts(Array.isArray(pRes.data) ? pRes.data : []);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "No se pudo cargar el negocio",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAll();
+  }, [id, toast]);
+
+  /* ================= ADAPTADORES ================= */
+
+  const categorias = useMemo(() => {
+    const map: Record<
+      string,
+      {
+        nombre: string;
+        productos: {
+          id: number;
+          nombre: string;
+          descripcion: string;
+          precio: number;
+          imagen: string | null;
+          ingredientes: IngredientPublicResponse[];
+        }[];
+      }
+    > = {};
+
+    for (const p of products) {
+      if (!map[p.category]) {
+        map[p.category] = {
+          nombre: CATEGORY_LABELS[p.category] ?? p.category,
+          productos: [],
+        };
+      }
+
+      map[p.category].productos.push({
+        id: p.id,
+        nombre: p.name,
+        descripcion: p.description,
+        precio: p.price,
+        imagen: p.imageUrl,
+        ingredientes: p.ingredients,
+      });
+    }
+
+    return Object.values(map);
+  }, [products]);
+
+  const negocio = useMemo(() => {
+    if (!business) return null;
+    return {
+      categorias: [CATEGORY_LABELS[business.category] ?? business.category],
+      rating: 4.5,
+      reviews: 10,
+      tiempoEntrega: "40-45 min",
+      distancia: "5 km",
+    };
+  }, [business]);
+
+  /* ================= HELPERS ================= */
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("es-CO", {
       style: "currency",
       currency: "COP",
       minimumFractionDigits: 0,
     }).format(price);
-  };
 
-  const handleAddToCart = (productoId: number) => {
-    setCarrito((prev) => ({
-      ...prev,
-      [productoId]: (prev[productoId] || 0) + 1,
-    }));
-    toast({
-      title: "Agregado al carrito",
-      description: "Producto agregado correctamente",
+  const totalItems = useMemo(
+    () => Object.values(carrito).reduce((a, b) => a + b, 0),
+    [carrito],
+  );
+
+  const totalPrice = useMemo(() => {
+    return Object.entries(carrito).reduce((sum, [id, qty]) => {
+      const product = products.find((p) => p.id === Number(id));
+      if (!product) return sum;
+      return sum + product.price * qty;
+    }, 0);
+  }, [carrito, products]);
+
+  /* ================= HANDLERS ================= */
+
+  const handleAddToCart = (id: number) =>
+    setCarrito((p) => ({ ...p, [id]: (p[id] || 0) + 1 }));
+
+  const handleRemoveFromCart = (id: number) =>
+    setCarrito((p) => {
+      const n = { ...p };
+      if (n[id] > 1) n[id]--;
+      else delete n[id];
+      return n;
     });
-  };
 
-  const handleRemoveFromCart = (productoId: number) => {
-    setCarrito((prev) => {
-      const newCart = { ...prev };
-      if (newCart[productoId] > 1) {
-        newCart[productoId]--;
-      } else {
-        delete newCart[productoId];
-      }
-      return newCart;
+  const handleIngredienteToggle = (pid: number, iid: number) =>
+    setIngredientesSeleccionados((p) => {
+      const cur = p[pid] || [];
+      return {
+        ...p,
+        [pid]: cur.includes(iid) ? cur.filter((x) => x !== iid) : [...cur, iid],
+      };
     });
-  };
 
-  const handleIngredienteToggle = (productoId: number, ingrediente: string) => {
-    setIngredientesSeleccionados((prev) => {
-      const current = prev[productoId] || [];
-      if (current.includes(ingrediente)) {
-        return {
-          ...prev,
-          [productoId]: current.filter((i) => i !== ingrediente),
-        };
-      } else {
-        return {
-          ...prev,
-          [productoId]: [...current, ingrediente],
-        };
-      }
-    });
-  };
+  /* ================= UI GUARD ================= */
 
-  const totalItems = Object.values(carrito).reduce((sum, qty) => sum + qty, 0);
-  const totalPrice = Object.entries(carrito).reduce((sum, [id, qty]) => {
-    const producto = categorias
-      .flatMap((c) => c.productos)
-      .find((p) => p.id === parseInt(id));
-    return sum + (producto?.precio || 0) * qty;
-  }, 0);
+  if (loading || !business || !negocio) return null;
+
+  /* ================= RENDER ================= */
 
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Hero Image */}
       <div className="relative h-64 md:h-80">
         <img
-          src={negocio.imagen}
-          alt={negocio.nombre}
+          src={
+            business.coverUrl
+              ? `${FILES_BASE_URL}${business.coverUrl}`
+              : "/placeholder/cover.jpg"
+          }
+          alt={business.name}
           className="w-full h-full object-cover"
         />
+
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {/* Back Button */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -247,20 +278,22 @@ const NegocioDetallePage = () => {
                   </Badge>
                 ))}
               </div>
-              
+
               <h1 className="text-2xl md:text-3xl font-display font-bold text-foreground mb-2">
-                {negocio.nombre}
+                {business?.name}
               </h1>
-              
+
               <p className="text-muted-foreground mb-4">
-                {negocio.descripcion}
+                {business?.description}
               </p>
-              
+
               <div className="flex flex-wrap items-center gap-4 text-sm">
                 <div className="flex items-center gap-1">
                   <Star className="w-4 h-4 fill-accent text-accent" />
                   <span className="font-medium">{negocio.rating}</span>
-                  <span className="text-muted-foreground">({negocio.reviews})</span>
+                  <span className="text-muted-foreground">
+                    ({negocio.reviews})
+                  </span>
                 </div>
                 <div className="flex items-center gap-1 text-muted-foreground">
                   <Clock className="w-4 h-4" />
@@ -289,7 +322,7 @@ const NegocioDetallePage = () => {
             <h2 className="text-xl font-display font-bold text-foreground mb-4">
               {categoria.nombre}
             </h2>
-            
+
             <div className="space-y-4">
               {categoria.productos.map((producto) => (
                 <Card key={producto.id} className="glass-card overflow-hidden">
@@ -298,12 +331,16 @@ const NegocioDetallePage = () => {
                       {/* Product Image */}
                       <div className="md:w-40 h-40 md:h-auto flex-shrink-0">
                         <img
-                          src={producto.imagen}
+                          src={
+                            producto.imagen
+                              ? `${FILES_BASE_URL}${producto.imagen}`
+                              : "/placeholder/product.jpg"
+                          }
                           alt={producto.nombre}
                           className="w-full h-full object-cover"
                         />
                       </div>
-                      
+
                       {/* Product Info */}
                       <div className="flex-1 p-4">
                         <div className="flex justify-between items-start mb-2">
@@ -314,33 +351,54 @@ const NegocioDetallePage = () => {
                             {formatPrice(producto.precio)}
                           </span>
                         </div>
-                        
+
                         <p className="text-sm text-muted-foreground mb-3">
                           {producto.descripcion}
                         </p>
-                        
+
                         {/* Ingredients */}
                         <div className="mb-4">
                           <p className="text-xs font-medium text-muted-foreground mb-2">
                             Extras disponibles:
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {producto.ingredientes.map((ingrediente) => (
-                              <label
-                                key={ingrediente}
-                                className="flex items-center gap-1.5 text-xs cursor-pointer"
-                              >
-                                <Checkbox
-                                  checked={(ingredientesSeleccionados[producto.id] || []).includes(ingrediente)}
-                                  onCheckedChange={() => handleIngredienteToggle(producto.id, ingrediente)}
-                                  className="w-3.5 h-3.5"
-                                />
-                                <span className="text-muted-foreground">{ingrediente}</span>
-                              </label>
-                            ))}
+                            {producto.ingredientes.length === 0 ? (
+                              <span className="text-xs text-muted-foreground">
+                                Sin extras disponibles
+                              </span>
+                            ) : (
+                              producto.ingredientes.map((ingrediente) => (
+                                <label
+                                  key={ingrediente.id}
+                                  className="flex items-center gap-1.5 text-xs cursor-pointer"
+                                >
+                                  <Checkbox
+                                    checked={(
+                                      ingredientesSeleccionados[producto.id] ||
+                                      []
+                                    ).includes(ingrediente.id)}
+                                    onCheckedChange={() =>
+                                      handleIngredienteToggle(
+                                        producto.id,
+                                        ingrediente.id,
+                                      )
+                                    }
+                                    className="w-3.5 h-3.5"
+                                  />
+                                  <span className="text-muted-foreground">
+                                    {ingrediente.name}
+                                    {ingrediente.extraPrice > 0 && (
+                                      <span className="ml-1">
+                                        (+{formatPrice(ingrediente.extraPrice)})
+                                      </span>
+                                    )}
+                                  </span>
+                                </label>
+                              ))
+                            )}
                           </div>
                         </div>
-                        
+
                         {/* Add to Cart */}
                         <div className="flex items-center justify-end gap-2">
                           {carrito[producto.id] ? (
@@ -349,7 +407,9 @@ const NegocioDetallePage = () => {
                                 size="icon"
                                 variant="outline"
                                 className="h-8 w-8"
-                                onClick={() => handleRemoveFromCart(producto.id)}
+                                onClick={() =>
+                                  handleRemoveFromCart(producto.id)
+                                }
                               >
                                 <Minus className="w-4 h-4" />
                               </Button>

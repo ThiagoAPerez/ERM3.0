@@ -21,6 +21,10 @@ public class ClientAddressEntity {
     @Column(nullable = false)
     private String name; // Casa, Trabajo, etc.
 
+    // Establece si es la dirección principal del cliente
+    @Column(name = "is_primary", nullable = false)
+    private boolean primaryAddress = false;
+
     @Column(nullable = false)
     private String address;
 
@@ -98,4 +102,17 @@ public class ClientAddressEntity {
     public void setStatus(AddressStatus status) {
         this.status = status;
     }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public boolean isPrimaryAddress() {
+        return primaryAddress;
+    }
+
+    public void setPrimaryAddress(boolean primaryAddress) {
+        this.primaryAddress = primaryAddress;
+    }
+
 }

@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
 
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
-import com.elrapidin.api.domain.enums.businesses.ProviderType;
+
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 
 public class AdminCreateProductRequest {
@@ -14,7 +14,7 @@ public class AdminCreateProductRequest {
     // ===== PROVIDER REAL =====
 
     @NotNull
-    private ProviderType providerType;
+    private BusinessesCategory providerType;
 
     @NotNull
     private Long providerId;
@@ -40,11 +40,11 @@ public class AdminCreateProductRequest {
 
     private String imageUrl;
 
-    public ProviderType getProviderType() {
+    public BusinessesCategory getProviderType() {
         return providerType;
     }
 
-    public void setProviderType(ProviderType providerType) {
+    public void setProviderType(BusinessesCategory providerType) {
         this.providerType = providerType;
     }
 

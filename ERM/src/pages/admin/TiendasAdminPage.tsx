@@ -33,13 +33,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-type CategoriaTienda = "supermercado" | "farmacia" | "tienda" | "licoreria" | "mascotas";
+type CategoriaTienda =
+  | "supermercado"
+  | "farmacia"
+  | "tienda"
+  | "licoreria"
+  | "mascotas";
 
 interface Producto {
   id: string;
@@ -155,7 +166,14 @@ const mockTiendas: Tienda[] = [
         imagen: "🍞",
         estado: "active",
       },
-      { id: "p8", nombre: "Huevos x 30", descripcion: "Huevos frescos", precio: 18000, imagen: "🥚", estado: "active" },
+      {
+        id: "p8",
+        nombre: "Huevos x 30",
+        descripcion: "Huevos frescos",
+        precio: 18000,
+        imagen: "🥚",
+        estado: "active",
+      },
     ],
   },
   {
@@ -218,7 +236,9 @@ const municipios = [
 const TiendasAdminPage = () => {
   const [tiendas, setTiendas] = useState<Tienda[]>(mockTiendas);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategoria, setFilterCategoria] = useState<CategoriaTienda | "all">("all");
+  const [filterCategoria, setFilterCategoria] = useState<
+    CategoriaTienda | "all"
+  >("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTienda, setEditingTienda] = useState<Tienda | null>(null);
   const [selectedTienda, setSelectedTienda] = useState<Tienda | null>(null);
@@ -236,8 +256,11 @@ const TiendasAdminPage = () => {
   });
 
   const filteredTiendas = tiendas.filter((t) => {
-    const matchesSearch = t.nombre.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategoria = filterCategoria === "all" || t.categoria === filterCategoria;
+    const matchesSearch = t.nombre
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategoria =
+      filterCategoria === "all" || t.categoria === filterCategoria;
     return matchesSearch && matchesCategoria;
   });
 
@@ -272,7 +295,11 @@ const TiendasAdminPage = () => {
 
   const handleSave = () => {
     if (editingTienda) {
-      setTiendas(tiendas.map((t) => (t.id === editingTienda.id ? { ...t, ...formData } : t)));
+      setTiendas(
+        tiendas.map((t) =>
+          t.id === editingTienda.id ? { ...t, ...formData } : t,
+        ),
+      );
     } else {
       const newTienda: Tienda = {
         id: Date.now().toString(),
@@ -286,7 +313,13 @@ const TiendasAdminPage = () => {
   };
 
   const handleToggleEstado = (id: string) => {
-    setTiendas(tiendas.map((t) => (t.id === id ? { ...t, estado: t.estado === "active" ? "inactive" : "active" } : t)));
+    setTiendas(
+      tiendas.map((t) =>
+        t.id === id
+          ? { ...t, estado: t.estado === "active" ? "inactive" : "active" }
+          : t,
+      ),
+    );
   };
 
   const handleDelete = (id: string) => {
@@ -305,7 +338,12 @@ const TiendasAdminPage = () => {
           return {
             ...t,
             productos: t.productos.map((p) =>
-              p.id === productoId ? { ...p, estado: p.estado === "active" ? "inactive" : "active" } : p,
+              p.id === productoId
+                ? {
+                    ...p,
+                    estado: p.estado === "active" ? "inactive" : "active",
+                  }
+                : p,
             ),
           };
         }
@@ -316,7 +354,9 @@ const TiendasAdminPage = () => {
       setSelectedTienda({
         ...selectedTienda,
         productos: selectedTienda.productos.map((p) =>
-          p.id === productoId ? { ...p, estado: p.estado === "active" ? "inactive" : "active" } : p,
+          p.id === productoId
+            ? { ...p, estado: p.estado === "active" ? "inactive" : "active" }
+            : p,
         ),
       });
     }
@@ -347,7 +387,12 @@ const TiendasAdminPage = () => {
             className="pl-10"
           />
         </div>
-        <Select value={filterCategoria} onValueChange={(v) => setFilterCategoria(v as CategoriaTienda | "all")}>
+        <Select
+          value={filterCategoria}
+          onValueChange={(v) =>
+            setFilterCategoria(v as CategoriaTienda | "all")
+          }
+        >
           <SelectTrigger className="w-full sm:w-[180px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Filtrar por categoría" />
@@ -381,8 +426,12 @@ const TiendasAdminPage = () => {
                   <ShoppingCart className="w-7 h-7 text-emphasis" />
                 </div>
                 <div className="pb-1">
-                  <h3 className="font-display font-semibold text-lg">{tienda.nombre}</h3>
-                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${categoriaColors[tienda.categoria]}`}>
+                  <h3 className="font-display font-semibold text-lg">
+                    {tienda.nombre}
+                  </h3>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${categoriaColors[tienda.categoria]}`}
+                  >
                     {categoriaLabels[tienda.categoria]}
                   </span>
                 </div>
@@ -408,7 +457,9 @@ const TiendasAdminPage = () => {
                     <Edit className="w-4 h-4 mr-2" />
                     Editar
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleToggleEstado(tienda.id)}>
+                  <DropdownMenuItem
+                    onClick={() => handleToggleEstado(tienda.id)}
+                  >
                     <Power className="w-4 h-4 mr-2" />
                     {tienda.estado === "active" ? "Desactivar" : "Activar"}
                   </DropdownMenuItem>
@@ -426,7 +477,11 @@ const TiendasAdminPage = () => {
 
             {/* Card Content */}
             <div className="p-4 space-y-3">
-              {tienda.descripcion && <p className="text-sm text-muted-foreground line-clamp-2">{tienda.descripcion}</p>}
+              {tienda.descripcion && (
+                <p className="text-sm text-muted-foreground line-clamp-2">
+                  {tienda.descripcion}
+                </p>
+              )}
               <div className="space-y-2 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="w-4 h-4" />
@@ -461,14 +516,18 @@ const TiendasAdminPage = () => {
       </div>
 
       {filteredTiendas.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">No se encontraron tiendas</div>
+        <div className="text-center py-12 text-muted-foreground">
+          No se encontraron tiendas
+        </div>
       )}
 
       {/* Create/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>{editingTienda ? "Editar Tienda" : "Nueva Tienda"}</DialogTitle>
+            <DialogTitle>
+              {editingTienda ? "Editar Tienda" : "Nueva Tienda"}
+            </DialogTitle>
             <DialogDescription>
               {editingTienda
                 ? "Modifica la información de la tienda"
@@ -482,7 +541,9 @@ const TiendasAdminPage = () => {
               <Input
                 id="nombre"
                 value={formData.nombre}
-                onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, nombre: e.target.value })
+                }
                 placeholder="Nombre de la tienda"
               />
             </div>
@@ -491,7 +552,9 @@ const TiendasAdminPage = () => {
               <Label htmlFor="categoria">Categoría</Label>
               <Select
                 value={formData.categoria}
-                onValueChange={(v) => setFormData({ ...formData, categoria: v as CategoriaTienda })}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, categoria: v as CategoriaTienda })
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -511,14 +574,21 @@ const TiendasAdminPage = () => {
               <Input
                 id="direccion"
                 value={formData.direccion}
-                onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, direccion: e.target.value })
+                }
                 placeholder="Dirección de la tienda"
               />
             </div>
 
             <div className="grid gap-2">
               <Label htmlFor="municipio">Municipio</Label>
-              <Select value={formData.municipio} onValueChange={(v) => setFormData({ ...formData, municipio: v })}>
+              <Select
+                value={formData.municipio}
+                onValueChange={(v) =>
+                  setFormData({ ...formData, municipio: v })
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccionar municipio" />
                 </SelectTrigger>
@@ -537,7 +607,9 @@ const TiendasAdminPage = () => {
               <Input
                 id="telefono"
                 value={formData.telefono}
-                onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, telefono: e.target.value })
+                }
                 placeholder="Número de teléfono"
               />
             </div>
@@ -547,7 +619,9 @@ const TiendasAdminPage = () => {
               <Textarea
                 id="descripcion"
                 value={formData.descripcion}
-                onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, descripcion: e.target.value })
+                }
                 placeholder="Descripción de la tienda"
                 rows={3}
               />
@@ -558,7 +632,9 @@ const TiendasAdminPage = () => {
               <Label>Logo de la Tienda</Label>
               <div
                 className="h-24 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer bg-muted/20"
-                onClick={() => setFormData({ ...formData, logo: "logo-placeholder.png" })}
+                onClick={() =>
+                  setFormData({ ...formData, logo: "logo-placeholder.png" })
+                }
               >
                 {formData.logo ? (
                   <div className="flex items-center gap-2 text-success">
@@ -579,7 +655,12 @@ const TiendasAdminPage = () => {
               <Label>Imagen de Fondo / Cover</Label>
               <div
                 className="h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center text-muted-foreground text-sm hover:border-emphasis/50 hover:text-emphasis transition-colors cursor-pointer bg-muted/20"
-                onClick={() => setFormData({ ...formData, imagenFondo: "cover-placeholder.png" })}
+                onClick={() =>
+                  setFormData({
+                    ...formData,
+                    imagenFondo: "cover-placeholder.png",
+                  })
+                }
               >
                 {formData.imagenFondo ? (
                   <div className="flex items-center gap-2 text-success">
@@ -608,22 +689,32 @@ const TiendasAdminPage = () => {
       </Dialog>
 
       {/* Products Dialog */}
-      <Dialog open={isProductsDialogOpen} onOpenChange={setIsProductsDialogOpen}>
+      <Dialog
+        open={isProductsDialogOpen}
+        onOpenChange={setIsProductsDialogOpen}
+      >
         <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ShoppingCart className="w-5 h-5 text-emphasis" />
               {selectedTienda?.nombre}
             </DialogTitle>
-            <DialogDescription>Productos disponibles en esta tienda</DialogDescription>
+            <DialogDescription>
+              Productos disponibles en esta tienda
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             {selectedTienda?.productos.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">Esta tienda no tiene productos registrados</div>
+              <div className="text-center py-8 text-muted-foreground">
+                Esta tienda no tiene productos registrados
+              </div>
             ) : (
               selectedTienda?.productos.map((producto) => (
-                <Card key={producto.id} className={producto.estado === "inactive" ? "opacity-50" : ""}>
+                <Card
+                  key={producto.id}
+                  className={producto.estado === "inactive" ? "opacity-50" : ""}
+                >
                   <CardContent className="flex items-center gap-4 p-4">
                     <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-2xl">
                       {producto.imagen}
@@ -631,11 +722,19 @@ const TiendasAdminPage = () => {
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
                         <h4 className="font-medium">{producto.nombre}</h4>
-                        <Badge variant={producto.estado === "active" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            producto.estado === "active"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {producto.estado === "active" ? "Activo" : "Inactivo"}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{producto.descripcion}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {producto.descripcion}
+                      </p>
                       <p className="text-lg font-display font-bold text-emphasis mt-1">
                         ${producto.precio.toLocaleString()}
                       </p>
@@ -644,7 +743,13 @@ const TiendasAdminPage = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => selectedTienda && handleToggleProductEstado(selectedTienda.id, producto.id)}
+                        onClick={() =>
+                          selectedTienda &&
+                          handleToggleProductEstado(
+                            selectedTienda.id,
+                            producto.id,
+                          )
+                        }
                       >
                         <Power className="w-4 h-4" />
                       </Button>
@@ -656,7 +761,10 @@ const TiendasAdminPage = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsProductsDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setIsProductsDialogOpen(false)}
+            >
               Cerrar
             </Button>
           </DialogFooter>

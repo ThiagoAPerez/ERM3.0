@@ -25,8 +25,6 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
-        System.out.println(">>> SECURITY CONFIG CARGADA <<<");
-
         http
                 .csrf(csrf -> csrf.disable())
 
@@ -41,13 +39,13 @@ public class SecurityConfig {
                         .requestMatchers("/health").permitAll()
                         .requestMatchers(HttpMethod.GET, "/businesses/**").permitAll()
 
-                        // roles por dominio
+                        // protegidos por rol
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/delivery/**").hasRole("DELIVERY")
                         .requestMatchers("/business/**").hasRole("BUSINESS")
                         .requestMatchers("/user/**").hasRole("CLIENT")
+                        .requestMatchers("/uploads/**").permitAll()
 
-                        // todo lo demás requiere token
                         .anyRequest().authenticated())
 
                 .addFilterBefore(

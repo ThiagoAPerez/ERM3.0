@@ -48,6 +48,7 @@ public class BusinessQueryService {
         response.setName(entity.getName());
         response.setDescription(entity.getDescription());
         response.setMunicipality(entity.getMunicipality());
+        response.setCategory(entity.getCategory().name());
         response.setLogoUrl(entity.getLogoUrl());
         response.setPreparationTimeMinutes(entity.getPreparationTimeMinutes());
 
@@ -65,6 +66,7 @@ public class BusinessQueryService {
         response.setMunicipality(entity.getMunicipality());
         response.setLogoUrl(entity.getLogoUrl());
         response.setCoverUrl(entity.getCoverUrl());
+        response.setCategory(entity.getCategory().name());
         response.setPreparationTimeMinutes(entity.getPreparationTimeMinutes());
 
         return response;

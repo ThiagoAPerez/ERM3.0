@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Set;
 
-import com.elrapidin.api.domain.enums.businesses.ProviderType;
 import com.elrapidin.api.domain.enums.businesses.BusinessesCategory;
 import com.elrapidin.api.domain.enums.product.ProductCategory;
 import com.elrapidin.api.domain.enums.product.ProductStatus;
@@ -22,7 +22,7 @@ public class ProductEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "provider_type", nullable = false, length = 20)
-    private ProviderType providerType;
+    private BusinessesCategory providerType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "provider_category", nullable = false, length = 20)
@@ -68,6 +68,9 @@ public class ProductEntity {
     @Column(nullable = false, length = 20)
     private ProductStatus status = ProductStatus.ACTIVE;
 
+    @OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ProductIngredientEntity> productIngredients;
+
     public Long getId() {
         return id;
     }
@@ -76,13 +79,11 @@ public class ProductEntity {
         this.id = id;
     }
 
-    public ProviderType getProviderType() {
+    public BusinessesCategory getProviderType() {
         return providerType;
     }
 
-    
-
-    public void setProviderType(ProviderType providerType) {
+    public void setProviderType(BusinessesCategory providerType) {
         this.providerType = providerType;
     }
 
@@ -189,4 +190,13 @@ public class ProductEntity {
     public void setProviderCategory(BusinessesCategory providerCategory) {
         this.providerCategory = providerCategory;
     }
+
+    public Set<ProductIngredientEntity> getProductIngredients() {
+        return productIngredients;
+    }
+
+    public void setProductIngredients(Set<ProductIngredientEntity> productIngredients) {
+        this.productIngredients = productIngredients;
+    }
+
 }

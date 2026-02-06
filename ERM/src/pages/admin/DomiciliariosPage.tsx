@@ -55,7 +55,11 @@ type ServiceType =
   | "DOMICILIARIO"
   | "MENSAJERIA";
 
-type DeliveryZone = "MARINILLA" | "RIONEGRO" | "EL_CAARMEN" | "NOASIGNADO";
+export type DeliveryZone =
+  | "MARINILLA"
+  | "RIONEGRO"
+  | "EL_CAARMEN"
+  | "NOASIGNADO";
 type DeliveryStatus =
   | "OFFLINE"
   | "AVAILABLE"
@@ -307,6 +311,9 @@ const DomiciliariosPage = () => {
     }
   };
 
+  //===========================================================================
+  // =====================  ELIMINAR DOMICILIARIO  ============================
+
   const handleDelete = async (id: string) => {
     try {
       await api.patch(`/admin/delivery/${id}/delete`);
@@ -316,7 +323,7 @@ const DomiciliariosPage = () => {
     }
   };
 
-  /* =====================  UI  ===================== */
+  /* =====================  UI  =============================================== */
   //===========================================================================
 
   return (
@@ -482,9 +489,9 @@ const DomiciliariosPage = () => {
                         onClick={() => handleToggleEstado(domiciliario)}
                       >
                         <Power className="w-4 h-4 mr-2" />
-                        {domiciliario.estado === "OFFLINE"
+                        {domiciliario.estado === "SUSPENDED"
                           ? "Activar"
-                          : "Desactivar"}
+                          : "Suspender"}
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -709,7 +716,6 @@ const DomiciliariosPage = () => {
                   <SelectItem value="EL_CAARMEN">
                     El Carmen de Viboral
                   </SelectItem>
-                  <SelectItem value="NOASIGNADO">NOASIGNADO</SelectItem>
                 </SelectContent>
               </Select>
             </div>

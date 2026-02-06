@@ -25,6 +25,9 @@ import {
   FileText,
 } from "lucide-react";
 
+//  =====================  COMPONENT  =====================
+//==========================================================
+
 const CrearOrdenPage = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
@@ -41,20 +44,26 @@ const CrearOrdenPage = () => {
     {
       id: "restaurante",
       icon: Utensils,
-      title: "Restaurante",
-      description: "Pide comida de tus restaurantes favoritos",
+      title: "Restaurantes",
+      description: "Deliciosa comida de tus lugares favoritos.",
+    },
+    {
+      id: "Tiendas",
+      icon: Package,
+      title: "Tiendas",
+      description: "Productos locales y artículos de conveniencia.",
     },
     {
       id: "mensajeria",
       icon: Bike,
-      title: "Mensajería",
-      description: "Envío rápido de documentos y paquetes pequeños",
+      title: "Un Rapidin ?",
+      description: "Envío rápido de documentos y paquetes pequeños.",
     },
     {
       id: "motocarguero",
       icon: Truck,
       title: "Motocarguero",
-      description: "Transporte de carga mediana",
+      description: "Transporte de carga mediana y pesada.",
     },
   ];
 
@@ -145,7 +154,11 @@ const CrearOrdenPage = () => {
                         : "border-border/50 hover:border-accent/50"
                     }`}
                   >
-                    <RadioGroupItem value={service.id} id={service.id} className="sr-only" />
+                    <RadioGroupItem
+                      value={service.id}
+                      id={service.id}
+                      className="sr-only"
+                    />
                     <div
                       className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                         formData.serviceType === service.id
@@ -156,8 +169,12 @@ const CrearOrdenPage = () => {
                       <service.icon className="w-6 h-6" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-foreground">{service.title}</p>
-                      <p className="text-sm text-muted-foreground">{service.description}</p>
+                      <p className="font-medium text-foreground">
+                        {service.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {service.description}
+                      </p>
                     </div>
                   </Label>
                 ))}
@@ -195,7 +212,9 @@ const CrearOrdenPage = () => {
                       <SelectItem key={addr.id} value={addr.id}>
                         <div className="flex flex-col">
                           <span className="font-medium">{addr.name}</span>
-                          <span className="text-xs text-muted-foreground">{addr.address}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {addr.address}
+                          </span>
                         </div>
                       </SelectItem>
                     ))}
@@ -208,7 +227,9 @@ const CrearOrdenPage = () => {
                   <span className="w-full border-t border-border/50" />
                 </div>
                 <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">o ingresa una nueva</span>
+                  <span className="bg-card px-2 text-muted-foreground">
+                    o ingresa una nueva
+                  </span>
                 </div>
               </div>
 
@@ -222,7 +243,10 @@ const CrearOrdenPage = () => {
                     className="pl-10"
                     value={formData.deliveryAddress}
                     onChange={(e) =>
-                      setFormData({ ...formData, deliveryAddress: e.target.value })
+                      setFormData({
+                        ...formData,
+                        deliveryAddress: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -239,7 +263,10 @@ const CrearOrdenPage = () => {
                     className="pl-10"
                     value={formData.recipientPhone}
                     onChange={(e) =>
-                      setFormData({ ...formData, recipientPhone: e.target.value })
+                      setFormData({
+                        ...formData,
+                        recipientPhone: e.target.value,
+                      })
                     }
                   />
                 </div>
@@ -287,8 +314,8 @@ const CrearOrdenPage = () => {
                     <span className="font-medium">Información del paquete</span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Para mensajería o motocarguero, describe el contenido y tamaño 
-                    aproximado de lo que envías.
+                    Para mensajería o motocarguero, describe el contenido y
+                    tamaño aproximado de lo que envías.
                   </p>
                 </div>
               )}

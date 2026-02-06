@@ -1,29 +1,27 @@
 package com.elrapidin.api.dto.auth;
 
+import com.elrapidin.api.domain.enums.user.UserRole;
+
 public class AuthResponse {
 
-    private String accessToken;
-    private String tokenType = "Bearer";
+    private final String accessToken;
+    private final String tokenType = "Bearer";
+    private final UserRole role;
 
-    public AuthResponse(String accessToken) {
+    public AuthResponse(String accessToken, UserRole role) {
         this.accessToken = accessToken;
+        this.role = role;
     }
 
     public String getAccessToken() {
         return accessToken;
     }
 
-    public void setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-    }
-
     public String getTokenType() {
         return tokenType;
     }
 
-    public void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
+    public UserRole getRole() {
+        return role;
     }
-
-    // getters
 }
